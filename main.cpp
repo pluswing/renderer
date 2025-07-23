@@ -54,12 +54,13 @@ int main(int argc, char** argv) {
   } else {
     model = new Model("obj/african_head.obj");
   }
+
   TGAImage image(width, height, TGAImage::RGB);
   for (int i=0; i<model->nfaces(); i++) {
     std::vector<int> face = model->face(i);
     for (int j=0; j < 3; j++) {
       Vec3f v0 = model->vert(face[j]);
-      Vec3f v1 = model->vert(face[j+1]%3);
+      Vec3f v1 = model->vert(face[(j+1)%3]);
       int x0 = (v0.x + 1.0) * width / 2.0;
       int y0 = (v0.y + 1.0) * height / 2.0;
       int x1 = (v1.x + 1.0) * width / 2.0;
