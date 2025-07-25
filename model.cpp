@@ -34,3 +34,22 @@ Model::Model(const char *filename): verts_(), faces_() {
   }
   std::cerr << "# v# " << verts_.size() << " f# " << faces_.size() << std::endl;
 }
+
+Model::~Model() {
+}
+
+int Model::nverts() {
+  return (int)verts_.size();
+}
+
+int Model::nfaces() {
+  return (int)faces_.size();
+}
+
+std::vector<int> Model::face(int idx) {
+  return faces_[idx];
+}
+
+Vec3f Model::vert(int i) {
+  return verts_[i];
+}
