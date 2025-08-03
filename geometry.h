@@ -29,7 +29,7 @@ template <class t> struct Vec3 {
     return Vec3(
       y * v.z - z * v.y,
       z * v.x - x * v.z,
-      x * v.y - y * v.z
+      x * v.y - y * v.x
     );
   }
   inline Vec3<t> operator +(const Vec3<t> &v) const { return Vec3<t>(x+v.x, y+v.y, z+v.z); }
