@@ -12,22 +12,22 @@ const TGAColor green = TGAColor(0,   255, 0,   255);
 const TGAColor blue  = TGAColor(0,   0,   255, 255);
 
 
-Vec3f barycentric(Vec2i *pts, Vec2i P) {
-  Vec3f u = Vec3f(
-    pts[2].raw[0] - pts[0].raw[0],
-    pts[1].raw[0] - pts[0].raw[0],
-    pts[0].raw[0] - P.raw[0]
-  ) ^ Vec3f(
-    pts[2].raw[1] - pts[0].raw[1],
-    pts[1].raw[1] - pts[0].raw[1],
-    pts[0].raw[1] - P.raw[1]
-  );
-  if (std::abs(u.z) < 1) return Vec3f(-1, 1, 1);
-  return Vec3f(
-    1.0f - (u.x + u.y) / u.z,
-    u.y / u.z,
-    u.x / u.z
-  );
+Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec2i P) {
+  Vec3f s[2];
+  for (int i = 2; i--;) {
+    s[i].raw[0] = C.raw[i] - A.raw[i];
+    s[i].raw[1] = B.raw[i] - A.raw[i];
+    s[i].raw[2] = A.raw[i] - P.raw[i];
+  }
+  Vec3f u = s[0] ^ s[1];
+  if (std::abs(u.z) > 1e-2) {
+    return Vec3f(
+      1.0f - (u.x + u.y) / u.z,
+      u.y / u.z,
+      u.x / u.z
+    );
+  }
+  return Vec3f(-1, 1, 1);
 }
 
 void line(Vec2i t0, Vec2i t1, TGAImage &image, TGAColor color) {
@@ -72,26 +72,38 @@ void line(Vec2i t0, Vec2i t1, TGAImage &image, TGAColor color) {
   }
 }
 
-void triangle(Vec2i *pts, TGAImage &image, TGAColor color) {
-  Vec2i bboxmin(image.get_width() - 1, image.get_height() - 1);
-  Vec2i bboxmax(0, 0);
-  Vec2i clamp(image.get_width() - 1, image.get_height() - 1);
+void triangle(Vec3i *pts, float *zbuffer, TGAImage &image, TGAColor color) {
+  Vec2f bboxmin(
+    std::numeric_limits<float>::max(),
+    std::numeric_limits<float>::max()
+  );
+  Vec2f bboxmax(
+    -std::numeric_limits<float>::max(),
+    -std::numeric_limits<float>::max()
+  );
+  Vec2f clamp(image.get_width() - 1, image.get_height() - 1);
 
   for (int i = 0; i < 3; i++) {
-    bboxmin.x = std::max(0, std::min(bboxmin.x, pts[i].x));
-    bboxmin.y = std::max(0, std::min(bboxmin.y, pts[i].y));
-
-    bboxmax.x = std::min(clamp.x, std::max(bboxmax.x, pts[i].x));
-    bboxmax.y = std::min(clamp.y, std::max(bboxmax.y, pts[i].y));
+    for (int j = 0; j < 2; j++) {
+      bboxmin.raw[j] = std::max(0.0f, std::min(bboxmin.raw[j], pts[i].raw[j]));
+      bboxmax.raw[j] = std::max(clamp.raw[j], std::min(bboxmax.raw[j], pts[i].raw[j]));
+    }
   }
-  Vec2i P;
+  Vec3f P;
   for (P.x = bboxmin.x; P.x <= bboxmax.x; P.x++) {
     for (P.y = bboxmin.y; P.y <= bboxmax.y; P.y++) {
-      Vec3f bc_screen = barycentric(pts, P);
+      Vec3f bc_screen = barycentric(pts[0], pts[1], tps[2], P);
       if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0) {
         continue;
       }
-      image.set(P.x, P.y, color);
+      P.z = 0;
+      for (int i = 0; i < 3; i++) {
+        P.z += pts[i].z * bc_screen.raw[i];
+      }
+      if (zbuffer[int(P.x + P.y * width)] < P.z) {
+        zbuffer[int(P.x + P.y * width)] = P.z;
+        image.set(P.x, P.y, color);
+      }
     }
   }
 }
@@ -114,8 +126,9 @@ void rasterize(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color, int ybuffer[
 
 int main(int argc, char** argv) {
 
-  TGAImage render(width, 16, TGAImage::RGB);
-  int ybuffer[width];
+  TGAImage render(width, height, TGAImage::RGB);
+  int *zbuffer = new int[width * height];
+
   for (int i = 0; i < width; i++) {
     ybuffer[i] = std::numeric_limits<int>::min();
   }
