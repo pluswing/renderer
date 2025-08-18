@@ -151,10 +151,14 @@ int main(int argc, char** argv) {
   for (int i=0; i<model->nfaces(); i++) {
     std::cout << "draw" << i << "/" << model->nfaces() << "\n";
     std::vector<int> face = model->face(i);
+    std::vector<int> texture_face = model->texture_face(i);
     Vec3f pts[3];
+    Vec2f texture_pts[3];
+
     Vec3f world_coods[3];
     for (int j=0; j < 3; j++) {
       pts[j] = world2screen(model->vert(face[j]));
+      texture_pts[j] = model->texture_vert(texture_face[j]);
       world_coods[j] = model->vert(face[j]);
     }
     Vec3f n = (world_coods[2] - world_coods[0]) ^ (world_coods[1] - world_coods[0]);

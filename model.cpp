@@ -5,7 +5,7 @@
 #include <vector>
 #include "model.h"
 
-Model::Model(const char *filename): verts_(), faces_() {
+Model::Model(const char *filename): verts_(), faces_(), texture_verts_(), texture_faces_() {
   std::ifstream in;
   in.open(filename, std::ifstream::in);
   if (in.fail()) return;
@@ -21,18 +21,30 @@ Model::Model(const char *filename): verts_(), faces_() {
         iss >> v.raw[i];
       }
       verts_.push_back(v);
+    } else if (!line.compare(0, 3, "vt ")) {
+      iss >> trash;
+      Vec2f v;
+      for (int i = 0; i < 2; i++) {
+        iss >> v.raw[i];
+      }
+      texture_verts_.push_back(v);
     } else if (!line.compare(0, 2, "f ")) {
       std::vector<int> f;
-      int itrash, idx;
+      std::vector<int> t;
+      int itrash, idx, tidx;
       iss >> trash;
-      while (iss >> idx >> trash >> itrash >> trash >> itrash) {
+      // idx/tidx/x
+      while (iss >> idx >> trash >> tidx >> trash >> itrash) {
         idx--;
+        tidx--;
         f.push_back(idx);
+        t.push_back(tidx);
       }
       faces_.push_back(f);
+      texture_faces_.push_back(t);
     }
   }
-  std::cerr << "# v# " << verts_.size() << " f# " << faces_.size() << std::endl;
+  std::cerr << "# v# " << verts_.size() << " f# " << faces_.size() << " vt# " << texture_verts_.size() << std::endl;
 }
 
 Model::~Model() {
@@ -50,6 +62,14 @@ std::vector<int> Model::face(int idx) {
   return faces_[idx];
 }
 
+std::vector<int> Model::texture_face(int idx) {
+  return texture_faces_[idx];
+}
+
 Vec3f Model::vert(int i) {
   return verts_[i];
+}
+
+Vec2f Model::texture_vert(int i) {
+  return texture_verts_[i];
 }
