@@ -72,7 +72,7 @@ void line(Vec2i t0, Vec2i t1, TGAImage &image, TGAColor color) {
   }
 }
 
-void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAColor color) {
+void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, Vec2f *texture_pts, TGAImage &texture) {
   Vec2f bboxmin(
     std::numeric_limits<float>::max(),
     std::numeric_limits<float>::max()
@@ -100,9 +100,13 @@ void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAColor color) {
       for (int i = 0; i < 3; i++) {
         P.z += pts[i].z * bc_screen.raw[i];
       }
+      // FIXME 重心からテクスチャのx,yを求める
+      int tx = 0;
+      int ty = 0;
       if (zbuffer[int(P.x + P.y * width)] < P.z) {
         zbuffer[int(P.x + P.y * width)] = P.z;
-        image.set(P.x, P.y, color);
+        int tx =
+        image.set(P.x, P.y, texture.get(tx, ty));
       }
     }
   }
@@ -132,6 +136,13 @@ Vec3f world2screen(Vec3f v) {
   );
 }
 
+Vec2f world2texture(Vec2f v, TGAImage &texture) {
+  return Vec2f(
+    int((v.x + 1.0) * texture.get_width() / 2.0 + 0.5),
+    int((v.y + 1.0) * texture.get_height() / 2.0 + 0.5)
+  );
+}
+
 int main(int argc, char** argv) {
   Model* model;
   if (2 == argc) {
@@ -139,6 +150,9 @@ int main(int argc, char** argv) {
   } else {
     model = new Model("obj/african_head.obj");
   }
+
+  TGAImage texture(1, 1, TGAImage::RGB);
+  texture.read_tga_file("obj/african_head_diffuse.tga");
 
   TGAImage render(width, height, TGAImage::RGB);
   float *zbuffer = new float[width * height];
@@ -158,19 +172,14 @@ int main(int argc, char** argv) {
     Vec3f world_coods[3];
     for (int j=0; j < 3; j++) {
       pts[j] = world2screen(model->vert(face[j]));
-      texture_pts[j] = model->texture_vert(texture_face[j]);
+      texture_pts[j] = world2texture(model->texture_vert(texture_face[j]), texture);
       world_coods[j] = model->vert(face[j]);
     }
     Vec3f n = (world_coods[2] - world_coods[0]) ^ (world_coods[1] - world_coods[0]);
     n.normalize();
     float intensity = n * light_dir;
     if (intensity > 0) {
-      triangle(pts, zbuffer, render, TGAColor(
-        intensity * 255,
-        intensity * 255,
-        intensity * 255,
-        255
-      ));
+      triangle(pts, zbuffer, render, texture_pts, texture);
     }
   }
 
