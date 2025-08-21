@@ -1,17 +1,21 @@
 #include <vector>
 #include <iostream>
+#include <cmath>
 #include "geometry.h"
 #include "tgaimage.h"
 #include "model.h"
 
-const int width = 800;
-const int height = 800;
-const TGAColor white = TGAColor(255, 255, 255, 255);
-const TGAColor red   = TGAColor(255, 0,   0,   255);
-const TGAColor green = TGAColor(0,   255, 0,   255);
-const TGAColor blue  = TGAColor(0,   0,   255, 255);
+const TGAColor white  = TGAColor(255, 255, 255, 255);
+const TGAColor red    = TGAColor(255, 0,   0,   255);
+const TGAColor green  = TGAColor(0,   255, 0,   255);
+const TGAColor blue   = TGAColor(0,   0,   255, 255);
+const TGAColor yellow = TGAColor(255, 255, 0,   255);
 
-
+Model *model = NULL;
+const int width = 100;
+const int height = 100;
+const int depth = 255;
+/*
 Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
   Vec3f s[2];
   for (int i = 2; i--;) {
@@ -29,49 +33,29 @@ Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
   }
   return Vec3f(-1, 1, 1);
 }
-
-void line(Vec2i t0, Vec2i t1, TGAImage &image, TGAColor color) {
+*/
+void line(Vec3i p0, Vec3i p1, TGAImage &image, TGAColor color) {
   bool steep = false;
-  int x0 = t0.x;
-  int y0 = t0.y;
-  int x1 = t1.x;
-  int y1 = t1.y;
-  if (std::abs(x0-x1) < std::abs(y0-y1)) {
-    std::swap(x0, y0);
-    std::swap(x1, y1);
-    steep = true;
+  if (std::abs(p0.x - p1.x) < std::abs(p0.y - p1.y)) {
+    std::swap(p0.x, p0.y);
+    std::swap(p1.x, p1.y);
+    steep = 1;
   }
-  if (x0 > x1) {
-    std::swap(x0, x1);
-    std::swap(y0, y1);
+  if (p0.x > p1.x) {
+    std::swap(p0, p1);
   }
 
-  int dx = x1-x0;
-  int dy = y1-y0;
-  int derror2 = std::abs(dy) * 2;
-  int error2 = 0;
-  int y = y0;
-  if (steep) {
-    for (int x = x0; x <= x1; x++) {
+  for (int x=p0.x; x <= p1.x; x++) {
+    float t = (x-p0.x) / (float) (p1.x - p0.x);
+    int y = p0.y * (1.0 - t) + p1.y * t + 0.5;
+    if (steep) {
       image.set(y, x, color);
-      error2 += derror2;
-      if (error2 > dx) {
-        y += (y1 > y0 ? 1 : -1);
-        error2 -= dx*2;
-      }
-    }
-  } else {
-    for (int x = x0; x <= x1; x++) {
+    } else {
       image.set(x, y, color);
-      error2 += derror2;
-      if (error2 > dx) {
-        y += (y1 > y0 ? 1 : -1);
-        error2 -= dx*2;
-      }
     }
   }
 }
-
+/*
 void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, Vec2f *texture_pts, TGAImage &texture) {
   Vec2f bboxmin(
     std::numeric_limits<float>::max(),
@@ -111,7 +95,8 @@ void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, Vec2f *texture_pts, T
     }
   }
 }
-
+*/
+/*
 void rasterize(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color, int ybuffer[]) {
 
   if (p0.x > p1.x) {
@@ -142,15 +127,100 @@ Vec2f world2texture(Vec2f v, TGAImage &texture) {
     int((v.y + 1.0) * texture.get_height() / 2.0 + 0.5)
   );
 }
+*/
+
+Vec3f m2v(Matrix m) {
+  return Vec3f(
+    m[0][0] / m[3][0],
+    m[1][0] / m[3][0],
+    m[2][0] / m[3][0]
+  );
+}
+
+Matrix v2m(Vec3f v) {
+  Matrix m(4, 1);
+  m[0][0] = v.x;
+  m[1][0] = v.y;
+  m[2][0] = v.z;
+  m[3][0] = 1.0f;
+  return m;
+}
+
+Matrix viewport(int x, int y, int w, int h) {
+  Matrix m = Matrix::identity(4);
+  m[0][3] = x + w / 2.0f;
+  m[1][3] = y + h / 2.0f;
+  m[2][3] = depth / 2.0f;
+
+  m[0][0] = w/2.0f;
+  m[1][1] = h/2.0f;
+  m[2][2] = depth/2.0f;
+
+  return m;
+}
+
+Matrix translation(Vec3f v) {
+  Matrix Tr = Matrix::identity(4);
+  Tr[0][3] = v.x;
+  Tr[1][3] = v.y;
+  Tr[2][3] = v.z;
+  return Tr;
+}
+
+Matrix zoom(float factor) {
+  Matrix Z = Matrix::identity(4);
+  Z[0][0] = Z[1][1] = Z[2][2] = factor;
+  return Z;
+}
+
+Matrix rotation_x(float cosangle, float sinangle) {
+  Matrix R = Matrix::identity(4);
+  R[1][1] = R[2][2] = cosangle;
+  R[1][2] = -sinangle;
+  R[2][1] = sinangle;
+  return R;
+}
+
+Matrix rotation_y(float cosangle, float sinangle) {
+  Matrix R = Matrix::identity(4);
+  R[0][0] = R[2][2] = cosangle;
+  R[0][2] = sinangle;
+  R[2][0] = -sinangle;
+  return R;
+}
+
+Matrix rotation_z(float cosangle, float sinangle) {
+  Matrix R = Matrix::identity(4);
+  R[0][0] = R[1][1] = cosangle;
+  R[0][1] = -sinangle;
+  R[1][0] = sinangle;
+  return R;
+}
 
 int main(int argc, char** argv) {
   Model* model;
   if (2 == argc) {
     model = new Model(argv[1]);
   } else {
-    model = new Model("obj/african_head.obj");
+    model = new Model("obj/cube.obj");
   }
 
+  TGAImage image(width, height, TGAImage::RGB);
+  Matrix VP = viewport(width/4, width/4, width/2, height/2);
+
+  {
+    Vec3f x(1.0f, 0.0f, 0.0f);
+    Vec3f y(0.0f, 1.0f, 0.0f);
+    Vec3f o(0.0f, 0.0f, 0.0f);
+
+    o = m2v(VP*v2m(o));
+    x = m2v(VP*v2m(x));
+    y = m2v(VP*v2m(y));
+
+    line(o, x, image, red);
+    line(o, y, image, green);
+  }
+/*
   TGAImage texture(1, 1, TGAImage::RGB);
   texture.read_tga_file("obj/african_head_diffuse.tga");
 
@@ -186,6 +256,7 @@ int main(int argc, char** argv) {
   render.flip_vertically();
   render.write_tga_file("render.tga");
   delete model;
+*/
 /*
   TGAImage scene(width, height, TGAImage::RGB);
   line(Vec2i(20, 34), Vec2i(744, 400), scene, red);
