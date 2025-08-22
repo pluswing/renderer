@@ -198,7 +198,6 @@ Matrix rotation_z(float cosangle, float sinangle) {
 }
 
 int main(int argc, char** argv) {
-  Model* model;
   if (2 == argc) {
     model = new Model(argv[1]);
   } else {
@@ -217,9 +216,26 @@ int main(int argc, char** argv) {
     x = m2v(VP*v2m(x));
     y = m2v(VP*v2m(y));
 
-    line(o, x, image, red);
-    line(o, y, image, green);
+    line(Vec3i(o.x, o.y, o.z), Vec3i(x.x, x.y, x.z), image, red);
+    line(Vec3i(o.x, o.y, o.z), Vec3i(y.x, y.y, y.z), image, green);
   }
+
+  for (int i = 0; i < model->nfaces(); i++) {
+    std::vector<int> face = model->face(i);
+    for (int j = 0; j < (int) face.size(); j++) {
+      Vec3f wp0 = model->vert(face[j]);
+      Vec3f wp1 = model->vert(face[(j+1)%face.size()]);
+      {
+        Vec3f sp0 = m2v(VP * v2m(wp0));
+        Vec3f sp1 = m2v(VP * v2m(wp1));
+        line(Vec3i(sp0.x, sp0.y, sp0.z), Vec3i(sp1.x, sp1.y, sp1.z), image, white);
+      }
+    }
+  }
+
+  image.flip_vertically();
+  image.write_tga_file("image.tga");
+  delete model;
 /*
   TGAImage texture(1, 1, TGAImage::RGB);
   texture.read_tga_file("obj/african_head_diffuse.tga");

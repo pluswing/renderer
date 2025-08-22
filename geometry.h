@@ -25,6 +25,7 @@ template <class t> struct Vec3 {
 	};
   Vec3() : x(0), y(0), z(0) {}
 	Vec3(t _x, t _y, t _z) : x(_x),y(_y),z(_z) {}
+  template <class u> Vec3<t>(const Vec3<u> &v);
   inline Vec3<t> operator ^(const Vec3<t> &v) const {
     return Vec3(
       y * v.z - z * v.y,
