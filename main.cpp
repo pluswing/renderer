@@ -230,7 +230,15 @@ int main(int argc, char** argv) {
         Vec3f sp1 = m2v(VP * v2m(wp1));
         line(Vec3i(sp0.x, sp0.y, sp0.z), Vec3i(sp1.x, sp1.y, sp1.z), image, white);
       }
+      {
+        Matrix T = zoom(1.5);
+        //
+        Vec3f sp0 = m2v(VP * T * v2m(wp0));
+        Vec3f sp1 = m2v(VP * T * v2m(wp1));
+        line(Vec3i(sp0.x, sp0.y, sp0.z), Vec3i(sp1.x, sp1.y, sp1.z), image, yellow);
+      }
     }
+    break;
   }
 
   image.flip_vertically();
