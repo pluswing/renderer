@@ -15,6 +15,8 @@ Model *model = NULL;
 const int width = 100;
 const int height = 100;
 const int depth = 255;
+Vec3f camera(0,0,3);
+
 /*
 Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
   Vec3f s[2];
@@ -206,6 +208,8 @@ int main(int argc, char** argv) {
 
   TGAImage image(width, height, TGAImage::RGB);
   Matrix VP = viewport(width/4, width/4, width/2, height/2);
+  Matrix Projection = Matrix::identity(4);
+  Projection[3][2] = -1.0f / camera.z;
 
   {
     Vec3f x(1.0f, 0.0f, 0.0f);
@@ -226,19 +230,19 @@ int main(int argc, char** argv) {
       Vec3f wp0 = model->vert(face[j]);
       Vec3f wp1 = model->vert(face[(j+1)%face.size()]);
       {
-        Vec3f sp0 = m2v(VP * v2m(wp0));
-        Vec3f sp1 = m2v(VP * v2m(wp1));
+        Vec3f sp0 = m2v(VP * Projection * v2m(wp0));
+        Vec3f sp1 = m2v(VP * Projection * v2m(wp1));
         line(Vec3i(sp0.x, sp0.y, sp0.z), Vec3i(sp1.x, sp1.y, sp1.z), image, white);
       }
-      {
-        Matrix T = zoom(1.5);
-        //
-        Vec3f sp0 = m2v(VP * T * v2m(wp0));
-        Vec3f sp1 = m2v(VP * T * v2m(wp1));
-        line(Vec3i(sp0.x, sp0.y, sp0.z), Vec3i(sp1.x, sp1.y, sp1.z), image, yellow);
-      }
+      // {
+      //   Matrix T = zoom(1.5);
+      //   //
+      //   Vec3f sp0 = m2v(VP * T * Projection * v2m(wp0));
+      //   Vec3f sp1 = m2v(VP * T * Projection * v2m(wp1));
+      //   line(Vec3i(sp0.x, sp0.y, sp0.z), Vec3i(sp1.x, sp1.y, sp1.z), image, yellow);
+      // }
     }
-    break;
+    // break;
   }
 
   image.flip_vertically();
