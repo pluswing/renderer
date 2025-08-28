@@ -11,11 +11,14 @@ const TGAColor green  = TGAColor(0,   255, 0,   255);
 const TGAColor blue   = TGAColor(0,   0,   255, 255);
 const TGAColor yellow = TGAColor(255, 255, 0,   255);
 
-Model *model = NULL;
-const int width = 100;
-const int height = 100;
+const int width = 800;
+const int height = 800;
 const int depth = 255;
-Vec3f camera(0,0,3);
+
+Model *model = NULL;
+int *zbuffer = NULL;
+Vec3f light_dir(0, 0, -1);
+Vec3f camera(0, 0, 3);
 
 /*
 Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
@@ -203,63 +206,57 @@ int main(int argc, char** argv) {
   if (2 == argc) {
     model = new Model(argv[1]);
   } else {
-    model = new Model("obj/cube.obj");
+    model = new Model("obj/african_head.obj");
   }
 
-  TGAImage image(width, height, TGAImage::RGB);
-  Matrix VP = viewport(width/4, width/4, width/2, height/2);
-  Matrix Projection = Matrix::identity(4);
-  Projection[3][2] = -1.0f / camera.z;
+  zbuffer = new int[width * height];
+  for (int i = 0; i < width*height; i++) {
+    zbuffer[i] = std::numeric_limits<int>::min();
+  }
 
   {
-    Vec3f x(1.0f, 0.0f, 0.0f);
-    Vec3f y(0.0f, 1.0f, 0.0f);
-    Vec3f o(0.0f, 0.0f, 0.0f);
+    Matrix Projection = Matrix::identity(4);
+    Matrix ViewPort = viewport(width/8, width/8, width*3/4, height/3/4);
+    Projection[3][2] = -1.0f / camera.z;
 
-    o = m2v(VP*v2m(o));
-    x = m2v(VP*v2m(x));
-    y = m2v(VP*v2m(y));
-
-    line(Vec3i(o.x, o.y, o.z), Vec3i(x.x, x.y, x.z), image, red);
-    line(Vec3i(o.x, o.y, o.z), Vec3i(y.x, y.y, y.z), image, green);
-  }
-
-  for (int i = 0; i < model->nfaces(); i++) {
-    std::vector<int> face = model->face(i);
-    for (int j = 0; j < (int) face.size(); j++) {
-      Vec3f wp0 = model->vert(face[j]);
-      Vec3f wp1 = model->vert(face[(j+1)%face.size()]);
-      {
-        Vec3f sp0 = m2v(VP * Projection * v2m(wp0));
-        Vec3f sp1 = m2v(VP * Projection * v2m(wp1));
-        line(Vec3i(sp0.x, sp0.y, sp0.z), Vec3i(sp1.x, sp1.y, sp1.z), image, white);
+    TGAImage image(width, height, TGAImage::RGB);
+    for (int i=0; i<model->nfaces(); i++) {
+      std::vector<int> face = model->face(i);
+      Vec3i screen_coords[3];
+      Vec3i world_coords[3];
+      for (int j = 0; j < 3; j++) {
+        Vec3f v = model->vert(face[j]);
+        screen_coords[j] = m2v(ViewPort * Projection * v2m(v));
+        world_coords[j] = v;
       }
-      // {
-      //   Matrix T = zoom(1.5);
-      //   //
-      //   Vec3f sp0 = m2v(VP * T * Projection * v2m(wp0));
-      //   Vec3f sp1 = m2v(VP * T * Projection * v2m(wp1));
-      //   line(Vec3i(sp0.x, sp0.y, sp0.z), Vec3i(sp1.x, sp1.y, sp1.z), image, yellow);
-      // }
+      Vec3f n = (world_coods[2] - world_coods[0]) ^ (world_coods[1] - world_coods[0]);
+      n.normalize();
+      float intensity = n * light_dir;
+      if (intensity > 0) {
+        Vec2i uv[3];
+        for (int k = 0; k < 3; k++) {
+          uv[k] = model->uv(i, k);
+        }
+        triangle(screen_coords[0], screen_coords[1], screen_coords[2], uv[0], uv[1], uv[2], image, intensity, zbuffer);
+      }
+
+      image.flip_vertically();
+      image.write_tga_file("output.tga");
     }
-    // break;
   }
 
-  image.flip_vertically();
-  image.write_tga_file("image.tga");
   delete model;
+  delete [] zbuffer;
+  return 0;
+}
+
 /*
   TGAImage texture(1, 1, TGAImage::RGB);
   texture.read_tga_file("obj/african_head_diffuse.tga");
 
   TGAImage render(width, height, TGAImage::RGB);
-  float *zbuffer = new float[width * height];
 
-  for (int i = 0; i < width*height; i++) {
-    zbuffer[i] = -std::numeric_limits<float>::max();
-  }
 
-  Vec3f light_dir(0, 0, -1);
   for (int i=0; i<model->nfaces(); i++) {
     std::cout << "draw" << i << "/" << model->nfaces() << "\n";
     std::vector<int> face = model->face(i);
@@ -338,4 +335,51 @@ int main(int argc, char** argv) {
   image.write_tga_file("output.tga");
   delete model;
 */
-}
+
+/*
+
+  TGAImage image(width, height, TGAImage::RGB);
+  Matrix VP = viewport(width/4, width/4, width/2, height/2);
+  Matrix Projection = Matrix::identity(4);
+  Projection[3][2] = -1.0f / camera.z;
+
+  {
+    Vec3f x(1.0f, 0.0f, 0.0f);
+    Vec3f y(0.0f, 1.0f, 0.0f);
+    Vec3f o(0.0f, 0.0f, 0.0f);
+
+    o = m2v(VP*v2m(o));
+    x = m2v(VP*v2m(x));
+    y = m2v(VP*v2m(y));
+
+    line(Vec3i(o.x, o.y, o.z), Vec3i(x.x, x.y, x.z), image, red);
+    line(Vec3i(o.x, o.y, o.z), Vec3i(y.x, y.y, y.z), image, green);
+  }
+
+  // Matrix r = rotation_y(cos(10 * M_PI / 180.0), sin(10 * M_PI / 180.0));
+
+  for (int i = 0; i < model->nfaces(); i++) {
+    std::vector<int> face = model->face(i);
+    for (int j = 0; j < (int) face.size(); j++) {
+      Vec3f wp0 = model->vert(face[j]);
+      Vec3f wp1 = model->vert(face[(j+1)%face.size()]);
+      {
+        Vec3f sp0 = m2v(VP * Projection * v2m(wp0));
+        Vec3f sp1 = m2v(VP * Projection * v2m(wp1));
+        line(Vec3i(sp0.x, sp0.y, sp0.z), Vec3i(sp1.x, sp1.y, sp1.z), image, white);
+      }
+      // {
+      //   Matrix T = zoom(1.5);
+      //   //
+      //   Vec3f sp0 = m2v(VP * T * Projection * v2m(wp0));
+      //   Vec3f sp1 = m2v(VP * T * Projection * v2m(wp1));
+      //   line(Vec3i(sp0.x, sp0.y, sp0.z), Vec3i(sp1.x, sp1.y, sp1.z), image, yellow);
+      // }
+    }
+    // break;
+  }
+
+  image.flip_vertically();
+  image.write_tga_file("image.tga");
+  delete model;
+*/
