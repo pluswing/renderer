@@ -109,9 +109,10 @@ void triangle(
         zbuffer[idx] = P.z;
         TGAColor color = model->diffuse(uvP);
         image.set(P.x, P.y, TGAColor(
-          color.r * intensity,
-          color.g * intensity,
-          color.b * intensity
+          255 * intensity,
+          255 * intensity,
+          255 * intensity,
+          255
         ));
       }
     }

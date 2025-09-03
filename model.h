@@ -3,7 +3,7 @@
 
 #include <vector>
 #include "geometry.h"
-
+#include "tgaimage.h"
 class Model {
   private:
     std::vector<Vec3f> verts_;
