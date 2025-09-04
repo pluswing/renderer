@@ -104,14 +104,14 @@ void triangle(
       float phi = B.x == A.x ? 1.0f : (float)(j - A.x) / (float)(B.x - A.x);
       Vec3i P = Vec3f(A) + Vec3f(B-A) * phi;
       Vec2i uvP = uvA + (uvB - uvA) * phi;
-      int idx = P.x + P.y + width;
-      if (zbuffer[idx] > P.z) {
+      int idx = P.x + P.y * width;
+      if (zbuffer[idx] < P.z) {
         zbuffer[idx] = P.z;
         TGAColor color = model->diffuse(uvP);
         image.set(P.x, P.y, TGAColor(
-          255 * intensity,
-          255 * intensity,
-          255 * intensity,
+          color.r * intensity,
+          color.g * intensity,
+          color.b * intensity,
           255
         ));
       }
@@ -234,14 +234,15 @@ int main(int argc, char** argv) {
 
   {
     Matrix Projection = Matrix::identity(4);
-    Matrix ViewPort = viewport(width/8, width/8, width*3/4, height/3/4);
+    Matrix ViewPort = viewport(width/8, width/8, width*3/4, height*3/4);
     Projection[3][2] = -1.0f / camera.z;
 
     TGAImage image(width, height, TGAImage::RGB);
+    // Matrix r = rotation_y(cos(90 * M_PI / 180.0), sin(90 * M_PI / 180.0));
     for (int i=0; i<model->nfaces(); i++) {
       std::vector<int> face = model->face(i);
       Vec3i screen_coords[3];
-      Vec3i world_coords[3];
+      Vec3f world_coords[3];
       for (int j = 0; j < 3; j++) {
         Vec3f v = model->vert(face[j]);
         screen_coords[j] = m2v(ViewPort * Projection * v2m(v));
@@ -257,10 +258,9 @@ int main(int argc, char** argv) {
         }
         triangle(screen_coords[0], screen_coords[1], screen_coords[2], uv[0], uv[1], uv[2], image, intensity, zbuffer);
       }
-
-      image.flip_vertically();
-      image.write_tga_file("output.tga");
     }
+    image.flip_vertically();
+    image.write_tga_file("output.tga");
   }
 
   delete model;
