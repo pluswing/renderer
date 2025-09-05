@@ -19,6 +19,7 @@ Model *model = NULL;
 int *zbuffer = NULL;
 Vec3f light_dir(0, 0, -1);
 Vec3f camera(0, 0, 3);
+Matrix ModelView;
 
 /*
 Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
@@ -218,6 +219,21 @@ Matrix rotation_z(float cosangle, float sinangle) {
   R[0][1] = -sinangle;
   R[1][0] = sinangle;
   return R;
+}
+
+void lookat(Vec3f eye, Vec3f center, Vec3f up) {
+  Vec3f z = (eye - center).normalize();
+  Vec3f x = (up ^ z).normalize();
+  Vec3f y = (z ^ x).normalize();
+  Matrix Minv = Matrix::identity(4);
+  Matrix Tr = Matrix::identity(4);
+  for (int i = 0; i < 3; i++) {
+    Minv[0][i] = x.raw[i];
+    Minv[1][i] = y.raw[i];
+    Minv[2][i] = z.raw[i];
+    Tr[i][3] = -eye.raw[i];
+  }
+  ModelView = Minv * Tr;
 }
 
 int main(int argc, char** argv) {
