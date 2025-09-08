@@ -17,9 +17,9 @@ const int depth = 255;
 
 Model *model = NULL;
 int *zbuffer = NULL;
-Vec3f light_dir(0, 0, -1);
-Vec3f camera(0, 0, 3);
-Matrix ModelView;
+Vec3f light_dir = Vec3f(1, -1, 1).normalize();
+Vec3f eye(0, 0, 3);
+Vec3f center(0, 0, 0);
 
 /*
 Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
@@ -221,7 +221,7 @@ Matrix rotation_z(float cosangle, float sinangle) {
   return R;
 }
 
-void lookat(Vec3f eye, Vec3f center, Vec3f up) {
+Matrix lookat(Vec3f eye, Vec3f center, Vec3f up) {
   Vec3f z = (eye - center).normalize();
   Vec3f x = (up ^ z).normalize();
   Vec3f y = (z ^ x).normalize();
@@ -233,7 +233,7 @@ void lookat(Vec3f eye, Vec3f center, Vec3f up) {
     Minv[2][i] = z.raw[i];
     Tr[i][3] = -eye.raw[i];
   }
-  ModelView = Minv * Tr;
+  return Minv * Tr;
 }
 
 int main(int argc, char** argv) {
@@ -249,9 +249,10 @@ int main(int argc, char** argv) {
   }
 
   {
+    Matrix ModelView = lookat(eye, center, Vec3f(0, 1, 0));
     Matrix Projection = Matrix::identity(4);
     Matrix ViewPort = viewport(width/8, width/8, width*3/4, height*3/4);
-    Projection[3][2] = -1.0f / camera.z;
+    Projection[3][2] = -1.0f / (eye - center).norm();
 
     TGAImage image(width, height, TGAImage::RGB);
     // Matrix r = rotation_y(cos(90 * M_PI / 180.0), sin(90 * M_PI / 180.0));
@@ -261,7 +262,7 @@ int main(int argc, char** argv) {
       Vec3f world_coords[3];
       for (int j = 0; j < 3; j++) {
         Vec3f v = model->vert(face[j]);
-        screen_coords[j] = m2v(ViewPort * Projection * v2m(v));
+        screen_coords[j] = m2v(ViewPort * Projection * ModelView * v2m(v));
         world_coords[j] = v;
       }
       Vec3f n = (world_coords[2] - world_coords[0]) ^ (world_coords[1] - world_coords[0]);
@@ -276,7 +277,7 @@ int main(int argc, char** argv) {
       }
     }
     image.flip_vertically();
-    image.write_tga_file("output.tga");
+    image.write_tga_file("output2.tga");
   }
 
   delete model;
