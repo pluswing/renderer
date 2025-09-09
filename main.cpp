@@ -18,7 +18,7 @@ const int depth = 255;
 Model *model = NULL;
 int *zbuffer = NULL;
 Vec3f light_dir = Vec3f(1, -1, 1).normalize();
-Vec3f eye(0, 0, 3);
+Vec3f eye(0, 0, -1);
 Vec3f center(0, 0, 0);
 
 /*
@@ -268,13 +268,13 @@ int main(int argc, char** argv) {
       Vec3f n = (world_coords[2] - world_coords[0]) ^ (world_coords[1] - world_coords[0]);
       n.normalize();
       float intensity = n * light_dir;
-      if (intensity > 0) {
+      // if (intensity > 0) {
         Vec2i uv[3];
         for (int k = 0; k < 3; k++) {
           uv[k] = model->uv(i, k);
         }
         triangle(screen_coords[0], screen_coords[1], screen_coords[2], uv[0], uv[1], uv[2], image, intensity, zbuffer);
-      }
+      // }
     }
     image.flip_vertically();
     image.write_tga_file("output2.tga");
