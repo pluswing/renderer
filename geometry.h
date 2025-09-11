@@ -1,7 +1,9 @@
 #ifndef __GEOMETRY_H__
 #define __GEOMETRY_H__
-
+#include <vector>
+#include <cassert>
 #include <cmath>
+#include <iostream>
 
 template <class t> struct Vec2 {
   union {
@@ -58,10 +60,8 @@ typedef Vec2<int> Vec2i;
 typedef Vec3<float> Vec3f;
 typedef Vec3<int> Vec3i;
 
-// template <> template <> Vec3<int>::Vec3(const Vec3<float>& v) : x(int(v.x + 0.5)), y(int(v.y + 0.5)), z(int(v.z + 0.5)) {
-// }
-// template <> template <> Vec3<float>::Vec3(const Vec3<int>& v) : x(v.x), y(v.y), z(v.z) {
-// }
+template <> template <> Vec3<int>::Vec3(const Vec3<float>& v);
+template <> template <> Vec3<float>::Vec3(const Vec3<int>& v);
 
 template <class t> std::ostream& operator<<(std::ostream& s, Vec2<t>& v) {
   s << "(" << v.x << ", " << v.y << ")\n";
