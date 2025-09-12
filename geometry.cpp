@@ -107,3 +107,21 @@ std::ostream& operator<<(std::ostream& s, Matrix& m) {
     }
     return s;
 }
+
+
+Vec3f m2v(Matrix m) {
+  return Vec3f(
+    m[0][0] / m[3][0],
+    m[1][0] / m[3][0],
+    m[2][0] / m[3][0]
+  );
+}
+
+Matrix v2m(Vec3f v) {
+  Matrix m(4, 1);
+  m[0][0] = v.x;
+  m[1][0] = v.y;
+  m[2][0] = v.z;
+  m[3][0] = 1.0f;
+  return m;
+}

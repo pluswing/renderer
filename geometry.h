@@ -93,4 +93,7 @@ public:
   friend std::ostream& operator<<(std::ostream& s, Matrix& m);
 };
 
+Vec3f m2v(Matrix m);
+Matrix v2m(Vec3f v);
+
 #endif

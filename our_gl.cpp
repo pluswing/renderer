@@ -1,7 +1,10 @@
 #include "our_gl.h"
 
+static Matrix ModelView;
+static Matrix Viewport;
+static Matrix Projection;
 
-Matrix viewport(int x, int y, int w, int h, int depth) {
+void viewport(int x, int y, int w, int h, int depth) {
   Matrix m = Matrix::identity(4);
   m[0][3] = x + w / 2.0f;
   m[1][3] = y + h / 2.0f;
@@ -11,16 +14,16 @@ Matrix viewport(int x, int y, int w, int h, int depth) {
   m[1][1] = h/2.0f;
   m[2][2] = depth/2.0f;
 
-  return m;
+  Viewport = m;
 }
 
-Matrix projection(float coeff) {
-  Matrix Projection = Matrix::identity(4);
-  Projection[3][2] = coeff;
-  return Projection;
+void projection(float coeff) {
+  Matrix p = Matrix::identity(4);
+  p[3][2] = coeff;
+  Projection = p;
 }
 
-Matrix lookat(Vec3f eye, Vec3f center, Vec3f up) {
+void lookat(Vec3f eye, Vec3f center, Vec3f up) {
   Vec3f z = (eye - center).normalize();
   Vec3f x = (up ^ z).normalize();
   Vec3f y = (z ^ x).normalize();
@@ -32,7 +35,7 @@ Matrix lookat(Vec3f eye, Vec3f center, Vec3f up) {
     Minv[2][i] = z.raw[i];
     Tr[i][3] = -eye.raw[i];
   }
-  return Minv * Tr;
+  ModelView = Minv * Tr;
 }
 
 void triangle(
@@ -106,4 +109,44 @@ void triangle(
       }
     }
   }
+}
+
+// ------------------------------------
+
+Matrix translation(Vec3f v) {
+  Matrix Tr = Matrix::identity(4);
+  Tr[0][3] = v.x;
+  Tr[1][3] = v.y;
+  Tr[2][3] = v.z;
+  return Tr;
+}
+
+Matrix zoom(float factor) {
+  Matrix Z = Matrix::identity(4);
+  Z[0][0] = Z[1][1] = Z[2][2] = factor;
+  return Z;
+}
+
+Matrix rotation_x(float cosangle, float sinangle) {
+  Matrix R = Matrix::identity(4);
+  R[1][1] = R[2][2] = cosangle;
+  R[1][2] = -sinangle;
+  R[2][1] = sinangle;
+  return R;
+}
+
+Matrix rotation_y(float cosangle, float sinangle) {
+  Matrix R = Matrix::identity(4);
+  R[0][0] = R[2][2] = cosangle;
+  R[0][2] = sinangle;
+  R[2][0] = -sinangle;
+  return R;
+}
+
+Matrix rotation_z(float cosangle, float sinangle) {
+  Matrix R = Matrix::identity(4);
+  R[0][0] = R[1][1] = cosangle;
+  R[0][1] = -sinangle;
+  R[1][0] = sinangle;
+  return R;
 }
