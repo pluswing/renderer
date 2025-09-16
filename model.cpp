@@ -6,7 +6,7 @@
 #include "model.h"
 #include "tgaimage.h"
 
-Model::Model(const char *filename): verts_(), faces_(), norms_(), uv_() {
+Model::Model(const char *filename): verts_(), faces_(), norms_(), uv_(), normalmap_(), specularmap_() {
   std::ifstream in;
   in.open(filename, std::ifstream::in);
   if (in.fail()) return;
@@ -53,6 +53,8 @@ Model::Model(const char *filename): verts_(), faces_(), norms_(), uv_() {
 std::cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << " vt# " << uv_.size() << " vn# " << norms_.size() << std::endl;
 
   load_texture(filename, "_diffuse.tga", diffusemap_);
+  load_texture(filename, "_nm.tga", normalmap_);
+  load_texture(filename, "_spec.tga", specularmap_);
 }
 
 Model::~Model() {
@@ -88,19 +90,41 @@ void Model::load_texture(std::string filename, const char *suffix, TGAImage &img
   }
 }
 
-TGAColor Model::diffuse(Vec2i uv) {
+TGAColor Model::diffuse(Vec2f uvf) {
+  Vec2i uv(
+    uvf.x + diffusemap_.get_width(),
+    uvf.y + diffusemap_.get_height()
+  );
   return diffusemap_.get(uv.x, uv.y);
 }
 
-Vec2i Model::uv(int iface, int nvert) {
-  int idx = faces_[iface][nvert].raw[1];
-  return Vec2i(
-    uv_[idx].x * diffusemap_.get_width(),
-    uv_[idx].y * diffusemap_.get_height()
+Vec3f Model::normal(Vec2f uvf) {
+  Vec2i uv(
+    uvf.x + normalmap_.get_width(),
+    uvf.y + normalmap_.get_height()
   );
+  TGAColor c = normalmap_.get(uv.x, uv.y);
+  Vec3f res;
+  for (int i = 0; i < 3; i++) {
+    res.raw[2-i] = (float) c.raw[i] / 255.0f * 2.0f - 1.0f;
+  }
+  return res;
+
 }
 
-Vec3f Model::norm(int iface, int nvert) {
-  int idx = faces_[iface][nvert].raw[2];
+Vec2f Model::uv(int iface, int nthvert) {
+  return uv_[faces_[iface][nthvert].raw[1]];
+}
+
+float Model::specular(Vec2f uvf) {
+  Vec2i uv(
+    uvf.x + specularmap_.get_width(),
+    uvf.y + specularmap_.get_height()
+  );
+  return specularmap_.get(uv.x, uv.y).r / 1.0f;
+}
+
+Vec3f Model::normal(int iface, int nthvert) {
+  int idx = faces_[iface][nthvert].raw[2];
   return norms_[idx].normalize();
 }
