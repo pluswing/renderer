@@ -20,9 +20,9 @@ struct IShader {
 };
 
 void triangle(
-  Vec3i t0, Vec3i t1, Vec3i t2,
-  Vec2i uv0, Vec2i uv1, Vec2i uv2,
-  float ity0, float ity1, float ity2,
-  TGAImage &image, int *zbuffer, Model *model);
+  Vec4f *pts,
+  IShader &ishader,
+  TGAImage &image,
+  TGAImage &zbuffer);
 
 #endif
