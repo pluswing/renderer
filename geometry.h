@@ -54,11 +54,24 @@ template <class t> struct Vec3 {
   template <class > friend std::ostream& operator<<(std::ostream& s, Vec3<t>& v);
 };
 
+template <class t> struct Vec4 {
+  union {
+		struct {t x, y, z, w;};
+    // FIXME
+		struct { t ivert, iuv, inorm, idummy; };
+		t raw[4];
+	};
+  Vec3() : x(0), y(0), z(0), w(0) {}
+	Vec3(t _x, t _y, t _z, t _w) : x(_x),y(_y),z(_z),w(_w) {}
+};
+
 typedef Vec2<float> Vec2f;
 typedef Vec2<int> Vec2i;
 
 typedef Vec3<float> Vec3f;
 typedef Vec3<int> Vec3i;
+
+typedef Vec4<float> Vec4f;
 
 template <> template <> Vec3<int>::Vec3(const Vec3<float>& v);
 template <> template <> Vec3<float>::Vec3(const Vec3<int>& v);
@@ -95,5 +108,8 @@ public:
 
 Vec3f m2v(Matrix m);
 Matrix v2m(Vec3f v);
+
+Vec4f embed(Vec2i v);
+Vec4f mulMatVec4(Matrix m, Vec4f v);
 
 #endif

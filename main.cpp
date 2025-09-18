@@ -31,8 +31,11 @@ struct GouraundShader : public IShader {
 
   virtual Vec4f vertex(int iface, int nthvert) {
     varying_intensity.raw[nthvert] = std::max(0.0f, model->normal(iface, nthvert) * light_dir);
-    Vec4f gl_Vertex = embed<4>(model->vert(iface, nthvert));
-    return Viewport * Projection * ModelView * gl_Vertex;
+    // embed<4>
+    Vec4f gl_Vertex = embed(model->vert(iface, nthvert));
+    // TODO Matrix * Vec4f
+    // TODO Matrix -> Vec4f
+    return mulMatVec4(Viewport * Projection * ModelView, gl_Vertex);
   }
 
   virtual bool fragment(Vec3f bar, TGAColor &color) {

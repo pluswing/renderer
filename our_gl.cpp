@@ -38,6 +38,24 @@ void lookat(Vec3f eye, Vec3f center, Vec3f up) {
   ModelView = Minv * Tr;
 }
 
+Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec2f P) {
+  Vec3f s[2];
+  for (int i = 2; i--;) {
+    s[i].raw[0] = C.raw[i] - A.raw[i];
+    s[i].raw[1] = B.raw[i] - A.raw[i];
+    s[i].raw[2] = A.raw[i] - P.raw[i];
+  }
+  Vec3f u = s[0] ^ s[1];
+  if (std::abs(u.z) > 1e-2) {
+    return Vec3f(
+      1.0f - (u.x + u.y) / u.z,
+      u.y / u.z,
+      u.x / u.z
+    );
+  }
+  return Vec3f(-1, 1, 1);
+}
+
 void triangle(
   Vec4f *pts,
   IShader &ishader,

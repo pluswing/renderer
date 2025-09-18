@@ -125,3 +125,31 @@ Matrix v2m(Vec3f v) {
   m[3][0] = 1.0f;
   return m;
 }
+
+Vec4f embed(Vec2i v) {
+  // Vec2i -> Vec4f
+  Vec4f ret;
+  ret.x = v.x;
+  ret.y = v.y;
+  ret.z = 1;
+  ret.w = 1;
+  return ret;
+}
+
+// Matrix => Vec4f<Vec4f>
+
+Vec4f mulMatVec4(Matrix m, Vec4f v) {
+  Vec4f ret;
+  for (int i = 4; i >= 0; i--) {
+    // float = (std::vector(4) => (Vec4f)) * Vec4f;
+    ret[i] = mulVectorFloat(m[i], v);
+  }
+  return ret;
+}
+
+// float mulVectorFloat(std::vector<float> vec, float val) {
+//   for (int i = 0; i < vec.len(); i++) {
+//     vec[i] *= val;
+//   }
+//   return vec;
+// }
