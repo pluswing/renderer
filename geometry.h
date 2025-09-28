@@ -1,115 +1,70 @@
+
 #ifndef __GEOMETRY_H__
 #define __GEOMETRY_H__
+
+#include <cmath>
 #include <vector>
 #include <cassert>
-#include <cmath>
 #include <iostream>
 
-template <class t> struct Vec2 {
-  union {
-    struct {t u, v;};
-    struct {t x, y;};
-    t raw[2];
-  };
-  Vec2() : u(0), v(0) {}
-  Vec2(t _u, t _v): u(_u), v(_v) {}
-  inline Vec2<t> operator +(const Vec2<t> &V) const { return Vec2<t>(u+V.u, v+V.v); }
-  inline Vec2<t> operator -(const Vec2<t> &V) const { return Vec2<t>(u-V.u, v-V.v); }
-  inline Vec2<t> operator *(float f) const { return Vec2<t>(u*f, v*f); }
-  template <class > friend std::ostream& operator<<(std::ostream& s, Vec2<t> & v);
+template<size_t DimCols, size_t DimRaws, typename T> class mat;
+
+template <size_t DIM, typename T> struct vec {
+  vec() {
+    for (size_t i = DIM; i--; data_[i] = T());
+  }
+  T& operator[](const size_t i) {
+    assert(i < DIM);
+    return data_[i];
+  }
+  const T& operator[](const size_t i) const {
+    assert(i < DIM);
+    return data_[i];
+  }
+private:
+  T data_[DIM];
 };
 
-template <class t> struct Vec3 {
-  union {
-		struct {t x, y, z;};
-		struct { t ivert, iuv, inorm; };
-		t raw[3];
-	};
-  Vec3() : x(0), y(0), z(0) {}
-	Vec3(t _x, t _y, t _z) : x(_x),y(_y),z(_z) {}
-  template <class u> Vec3<t>(const Vec3<u> &v);
-  Vec3<t>(const Vec3<t> &v) : x(t()), y(t()), z(t()) {
-    *this = v;
+/////////////////////////////////////////////////
+
+template <typename T> struct vec<2, T> {
+  vec() : x(T()), y(T()) {}
+  vec(T X, T Y) : x(X), y(Y) {}
+
+  template <class U> vec<2, T>(const vec<2, U> &v);
+
+  T& operator[](const size_t i) {
+    assert(i < 2);
+    return i <= 0 ? x : y;
   }
-  inline Vec3<t> operator ^(const Vec3<t> &v) const {
-    return Vec3(
-      y * v.z - z * v.y,
-      z * v.x - x * v.z,
-      x * v.y - y * v.x
-    );
+  const T& operator[](const size_t i) const {
+    assert(i < 2);
+    return i <= 0 ? x : y;
   }
-  inline Vec3<t> operator +(const Vec3<t> &v) const { return Vec3<t>(x+v.x, y+v.y, z+v.z); }
-	inline Vec3<t> operator -(const Vec3<t> &v) const { return Vec3<t>(x-v.x, y-v.y, z-v.z); }
-	inline Vec3<t> operator *(float f)          const { return Vec3<t>(x*f, y*f, z*f); }
-	inline t       operator *(const Vec3<t> &v) const { return x*v.x + y*v.y + z*v.z; }
-	float norm() const {
-    return std::sqrt(
-      x * x + y * y + z * z
-    );
-  }
-  Vec3<t> normalize(t l=1) {
-    *this = (*this)*(l/norm());
-    return *this;
-  }
-  template <class > friend std::ostream& operator<<(std::ostream& s, Vec3<t>& v);
+
+  T x, y;
 };
 
-template <class t> struct Vec4 {
-  union {
-		struct {t x, y, z, w;};
-    // FIXME
-		struct { t ivert, iuv, inorm, idummy; };
-		t raw[4];
-	};
-  Vec3() : x(0), y(0), z(0), w(0) {}
-	Vec3(t _x, t _y, t _z, t _w) : x(_x),y(_y),z(_z),w(_w) {}
+/////////////////////////////////////////////////
+
+template <typename T> struct vec<3, T> {
+  vec() : x(T()), y(T()), z(T()) {}
+  vec(T X, T Y, T Z) : x(X), y(Y), z(Z) {}
+
+  template <class U> vec<3, T>(const vec<3, U> &v);
+
+  T& operator[](const size_t i) {
+    assert(i < 3);
+    return i <= 0 ? x : (1 == i ? y : z);
+  }
+  const T& operator[](const size_t i) const {
+    assert(i < 3);
+    return i <= 0 ? x : (1 == i ? y : z);
+  }
+
+  float norm() { return srd:sqrt(x*x + y*y + z*z); }
+
+  T x, y, z;
 };
-
-typedef Vec2<float> Vec2f;
-typedef Vec2<int> Vec2i;
-
-typedef Vec3<float> Vec3f;
-typedef Vec3<int> Vec3i;
-
-typedef Vec4<float> Vec4f;
-
-template <> template <> Vec3<int>::Vec3(const Vec3<float>& v);
-template <> template <> Vec3<float>::Vec3(const Vec3<int>& v);
-
-template <class t> std::ostream& operator<<(std::ostream& s, Vec2<t>& v) {
-  s << "(" << v.x << ", " << v.y << ")\n";
-  return s;
-}
-
-template <class t> std::ostream& operator<<(std::ostream& s, Vec3<t>& v) {
-	s << "(" << v.x << ", " << v.y << ", " << v.z << ")\n";
-	return s;
-}
-
-const int DEFAULT_ALLOC=4;
-
-class Matrix {
-  std::vector<std::vector<float> > m;
-  int rows, cols;
-
-public:
-  Matrix(int r=DEFAULT_ALLOC, int c=DEFAULT_ALLOC);
-  inline int nrows();
-  inline int ncols();
-
-  static Matrix identity(int dimensions);
-  std::vector<float>& operator[](const int i);
-  Matrix operator*(const Matrix& a);
-  Matrix transpose();
-  Matrix inverse();
-
-  friend std::ostream& operator<<(std::ostream& s, Matrix& m);
-};
-
-Vec3f m2v(Matrix m);
-Matrix v2m(Vec3f v);
-
-Vec4f embed(Vec2i v);
-Vec4f mulMatVec4(Matrix m, Vec4f v);
 
 #endif
