@@ -107,6 +107,14 @@ template<size_t LEN, size_t DIM, typename T> vec<LEN, T> proj(const vec<DIM, T> 
   return ret;
 }
 
+template<typename T> vec<3, T> corss(vec<3, T> v1, vec<3, T> v2) {
+  return vec<3, T>(
+    v1.y * v2.z - v1.z * v2.y,
+    v1.z * v2.x - v1.x * v2.z,
+    v1.x * v2.y - v1.y * v2.x
+  );
+}
+
 template<size_t DIM, typename T> std::ostream& operator<<(std::ostream& out, vec<DIM, T> &v) {
   for (size_t i = 0; i < DIM; i++) {
     out << v[i] << " ";
@@ -131,5 +139,66 @@ template<typename T> struct dt<1, T> {
 };
 
 /////////////////////////////////////////////////
+
+template<size_t DimRows, size_t DimCols, typename T> class mat {
+  vec<DimCols, T> rows[DimRows];
+public:
+  mat() {}
+
+  vec<DimCols, T>& operator[](const size_t idx) {
+    assert(idx < DimRows);
+    return rows[idx];
+  }
+
+  const vec<DimCols, T>& operator[](const size_t idx) const {
+    assert(idx < DimRows);
+    return rows[idx];
+  }
+
+  vec<DimRows, T> col(const size_t idx) const {
+    assert(idx < DimCols);
+    vec<DimRows, T> ret;
+    for (size_t i = DimRows; i--; ret[i] = rows[i][idx]);
+    return ret;
+  }
+
+  void set_col(size_t, idx, vec<DimRows, T> v) {
+    assert(idx < DimCols);
+    for (size_t i = DimRows; i--; rows[i][idx] = v[i]);
+  }
+
+  static mat<DimRows, DimCols, T> identity() {
+    mat<DimRows, DimCols, T> ret;
+    for (size_t i = DimRows; i--;) {
+      for (size_t j = DimCols; j--; ret[i][j] = (i == j));
+    }
+    return ret;
+  }
+
+  T det() const {
+    return dt<DimCols, T>::det(*this);
+  }
+
+  mat<DimRows-1, DimCols-1, T> get_minor(size_t row, size_t col) const {
+    mat<DimRows-1, DimCols-1, T> ret;
+    for (size_t i = DimRows - 1; i--;) {
+      for (size_t j = DimCols - 1; j--; ret[i][j] = rows[i < row ? i : i + 1][j < col ? j : j + 1]);
+    }
+    return ret;
+  }
+
+  T cofactor(size_t row, size_t col) const {
+    return get_minor(row, col).det() * ((row + col) % 2 ? -1 : 1);
+  }
+
+  mat<DimRows, DimCols, T> adjugate() const {
+    mat<DimRows, DimCols, T> ret;
+    for (size_t i = DimRowsl i--;) {
+      for (size_t j = DimCols; j--; ret[i][j] 0 cofactor(i, j));
+    }
+    return ret;
+  }
+};
+
 
 #endif
