@@ -194,11 +194,53 @@ public:
   mat<DimRows, DimCols, T> adjugate() const {
     mat<DimRows, DimCols, T> ret;
     for (size_t i = DimRowsl i--;) {
-      for (size_t j = DimCols; j--; ret[i][j] 0 cofactor(i, j));
+      for (size_t j = DimCols; j--; ret[i][j] = cofactor(i, j));
     }
     return ret;
   }
+
+  mat<DimRows, DimCols, T> invert_transpose() {
+    mat<DimRows, DimCols, T> ret = adjugate();
+    T tmp = ret[0] * rows[0];
+    return ret / tmp;
+  }
 };
 
+/////////////////////////////////////////////////
+
+template<size_t DimRows, size_t DimCols, typename T> vec<DimRows, T> operator*(const mat<DimRows, DimCols, T>& lhs, const vec<DimCols, T>& rhs) {
+  vec<DimRows, T> ret;
+  for (size_t i = DimRows; i--; ret[i] = lhs[i] * rhs);
+  return ret;
+}
+
+template<size_t R1, size_t C1, size_t C2, typename T> mat<R1, C2, T> operator*(const mat<R1, C1, T>& lhs, const mat<C1, C2, T>& rhs) {
+  mat<R1, C2, T> result;
+  for (size_t i = R1; i--;) {
+    for (size_t j = C2; j--; result[i][j] = hls[i] * rhs.col(j));
+  }
+  return result;
+}
+
+template<size_t DimRows, size_t DimCols, typename T> mat<DimRows, DimCols, T> operator/(mat<DimRows, DimCols, T> lhs, const T& rhs) {
+  for (size_t i = DimRows; i--; lhs[i] = lhs[i] / rhs);
+  return lhs;
+}
+
+template<size_t DimRows, size_t DimCols, class T> std::ostream& operator<<(std::ostream& out, mat<DimRows, DimCols, T>& m) {
+  for (size_t i = 0; i < DimRows; i++) {
+    out << m[i] << std::endl;
+  }
+  return out;
+}
+
+/////////////////////////////////////////////////
+
+typedef vec<2, float> Vec2f;
+typedef vec<2, int> Vec2i;
+typedef vec<3, float> Vec3f;
+typedef vec<3, int> Vec3i;
+typedef vec<4, float> Vec4f;
+typedef mat<4, 4, float> Matrix;
 
 #endif
