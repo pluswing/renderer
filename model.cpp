@@ -19,21 +19,21 @@ Model::Model(const char *filename): verts_(), faces_(), norms_(), uv_(), normalm
       iss >> trash;
       Vec3f v;
       for (int i = 0; i < 3; i++) {
-        iss >> v.raw[i];
+        iss >> v[i];
       }
       verts_.push_back(v);
     } else if (!line.compare(0, 3, "vn ")) {
       iss >> trash >> trash;
       Vec3f n;
       for (int i = 0; i < 3; i++) {
-        iss >> n.raw[i];
+        iss >> n[i];
       }
       norms_.push_back(n);
     } else if (!line.compare(0, 3, "vt ")) {
       iss >> trash >> trash;
       Vec2f uv;
       for (int i = 0; i < 2; i++) {
-        iss >> uv.raw[i];
+        iss >> uv[i];
       }
       uv_.push_back(uv);
     } else if (!line.compare(0, 2, "f ")) {
@@ -41,9 +41,9 @@ Model::Model(const char *filename): verts_(), faces_(), norms_(), uv_(), normalm
       Vec3i tmp;
       iss >> trash;
       // idx/tidx/x
-      while (iss >> tmp.raw[0] >> trash >> tmp.raw[1] >> trash >> tmp.raw[2]) {
+      while (iss >> tmp[0] >> trash >> tmp[1] >> trash >> tmp[2]) {
         for (int i = 0; i < 3; i++) {
-          tmp.raw[i]--;
+          tmp[i]--;
         }
         f.push_back(tmp);
       }
@@ -71,13 +71,17 @@ int Model::nfaces() {
 std::vector<int> Model::face(int idx) {
   std::vector<int> face;
   for (int i = 0; i < (int)faces_[idx].size(); i++) {
-    face.push_back(faces_[idx][i].raw[0]);
+    face.push_back(faces_[idx][i][0]);
   }
   return face;
 }
 
 Vec3f Model::vert(int i) {
   return verts_[i];
+}
+
+Vec3f Model::vert(int iface, int nthvert) {
+  return verts_[faces_[iface][nthvert][0]];
 }
 
 void Model::load_texture(std::string filename, const char *suffix, TGAImage &img) {
@@ -105,15 +109,18 @@ Vec3f Model::normal(Vec2f uvf) {
   );
   TGAColor c = normalmap_.get(uv.x, uv.y);
   Vec3f res;
-  for (int i = 0; i < 3; i++) {
-    res.raw[2-i] = (float) c.raw[i] / 255.0f * 2.0f - 1.0f;
-  }
+  res[2] = (float) c.r / 255.0f * 2.0f - 1.0f;
+  res[1] = (float) c.g / 255.0f * 2.0f - 1.0f;
+  res[0] = (float) c.b / 255.0f * 2.0f - 1.0f;
+  // for (int i = 0; i < 3; i++) {
+  //   res[2-i] = (float) c[i] / 255.0f * 2.0f - 1.0f;
+  // }
   return res;
 
 }
 
 Vec2f Model::uv(int iface, int nthvert) {
-  return uv_[faces_[iface][nthvert].raw[1]];
+  return uv_[faces_[iface][nthvert][1]];
 }
 
 float Model::specular(Vec2f uvf) {
@@ -125,6 +132,6 @@ float Model::specular(Vec2f uvf) {
 }
 
 Vec3f Model::normal(int iface, int nthvert) {
-  int idx = faces_[iface][nthvert].raw[2];
+  int idx = faces_[iface][nthvert][2];
   return norms_[idx].normalize();
 }

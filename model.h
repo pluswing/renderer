@@ -22,7 +22,7 @@ class Model {
     Vec3f normal(int iface, int nvert);
     Vec3f normal(Vec2f uv);
     Vec3f vert(int i);
-    Vec2i vert(int iface, int nthvert);
+    Vec3f vert(int iface, int nthvert);
     Vec2f uv(int iface, int nthvert);
     TGAColor diffuse(Vec2f uvf);
     float specular(Vec2f uvf);

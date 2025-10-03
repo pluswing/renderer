@@ -62,7 +62,11 @@ template<typename T> struct vec<3, T> {
     return i <= 0 ? x : (1 == i ? y : z);
   }
 
-  float norm() { return srd:sqrt(x*x + y*y + z*z); }
+  float norm() { return std::sqrt(x*x + y*y + z*z); }
+  vec<3, T> & normalize(T l = 1) {
+    *this = (*this) * (l / norm());
+    return *this;
+  }
 
   T x, y, z;
 };
@@ -107,7 +111,7 @@ template<size_t LEN, size_t DIM, typename T> vec<LEN, T> proj(const vec<DIM, T> 
   return ret;
 }
 
-template<typename T> vec<3, T> corss(vec<3, T> v1, vec<3, T> v2) {
+template<typename T> vec<3, T> cross(vec<3, T> v1, vec<3, T> v2) {
   return vec<3, T>(
     v1.y * v2.z - v1.z * v2.y,
     v1.z * v2.x - v1.x * v2.z,
@@ -127,13 +131,13 @@ template<size_t DIM, typename T> std::ostream& operator<<(std::ostream& out, vec
 template<size_t DIM, typename T> struct dt {
   static T det(const mat<DIM, DIM, T>& src) {
     T ret = 0;
-    for (size_t i = DIM; i--; ret += src[0][i] * src.cofactor(0, i)):
+    for (size_t i = DIM; i--; ret += src[0][i] * src.cofactor(0, i));
     return ret;
   }
 };
 
 template<typename T> struct dt<1, T> {
-  struct T det(const mat<1, 1, T>& src) {
+  static T det(const mat<1, 1, T>& src) {
     return src[0][0];
   }
 };
@@ -162,7 +166,7 @@ public:
     return ret;
   }
 
-  void set_col(size_t, idx, vec<DimRows, T> v) {
+  void set_col(size_t idx, vec<DimRows, T> v) {
     assert(idx < DimCols);
     for (size_t i = DimRows; i--; rows[i][idx] = v[i]);
   }
@@ -193,7 +197,7 @@ public:
 
   mat<DimRows, DimCols, T> adjugate() const {
     mat<DimRows, DimCols, T> ret;
-    for (size_t i = DimRowsl i--;) {
+    for (size_t i = DimRows; i--;) {
       for (size_t j = DimCols; j--; ret[i][j] = cofactor(i, j));
     }
     return ret;
@@ -217,7 +221,7 @@ template<size_t DimRows, size_t DimCols, typename T> vec<DimRows, T> operator*(c
 template<size_t R1, size_t C1, size_t C2, typename T> mat<R1, C2, T> operator*(const mat<R1, C1, T>& lhs, const mat<C1, C2, T>& rhs) {
   mat<R1, C2, T> result;
   for (size_t i = R1; i--;) {
-    for (size_t j = C2; j--; result[i][j] = hls[i] * rhs.col(j));
+    for (size_t j = C2; j--; result[i][j] = lhs[i] * rhs.col(j));
   }
   return result;
 }
