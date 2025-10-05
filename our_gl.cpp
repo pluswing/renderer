@@ -1,18 +1,22 @@
 #include "our_gl.h"
 
-// static Matrix ModelView;
-// static Matrix Viewport;
-// static Matrix Projection;
+Matrix ModelView;
+Matrix Viewport;
+Matrix Projection;
 
-void viewport(int x, int y, int w, int h, int depth) {
+IShader::~IShader() {}
+
+void viewport(int x, int y, int w, int h) {
   Matrix m = Matrix::identity();
+  float depth = 255.0f;
+
   m[0][3] = x + w / 2.0f;
   m[1][3] = y + h / 2.0f;
   m[2][3] = depth / 2.0f;
 
-  m[0][0] = w/2.0f;
-  m[1][1] = h/2.0f;
-  m[2][2] = depth/2.0f;
+  m[0][0] = w / 2.0f;
+  m[1][1] = h / 2.0f;
+  m[2][2] = depth / 2.0f;
 
   Viewport = m;
 }

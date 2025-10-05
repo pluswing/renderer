@@ -17,22 +17,17 @@ const int width = 800;
 const int height = 800;
 
 Vec3f light_dir = Vec3f(1, 1, 1);
-Vec3f eye(1, 1, 3);
+Vec3f eye(0, -1, 3);
 Vec3f center(0, 0, 0);
 Vec3f up(0, 1, 0);
-
-/////////////
-int *zbuffer = NULL;
-const int depth = 255;
-/////////////
 
 struct GouraundShader : public IShader {
   Vec3f varying_intensity;
 
   virtual Vec4f vertex(int iface, int nthvert) {
+    varying_intensity[nthvert] = std::max(0.0f, model->normal(iface, nthvert) * light_dir);
     Vec4f gl_Vertex = embed<4>(model->vert(iface, nthvert));
-    varying_intensity[nthvert] = std::max(0.1f, model->normal(iface, nthvert) * light_dir);
-    return Viewport * Projection * ModelView, gl_Vertex;;
+    return Viewport * Projection * ModelView * gl_Vertex;
   }
 
   virtual bool fragment(Vec3f bar, TGAColor &color) {
@@ -55,7 +50,7 @@ int main(int argc, char** argv) {
   }
 
   lookat(eye, center, up);
-  viewport(width/8, width/8, width*3/4, height*3/4, depth);
+  viewport(width/8, width/8, width*3/4, height*3/4);
   projection(-1.0f / (eye - center).norm());
   light_dir.normalize();
 
