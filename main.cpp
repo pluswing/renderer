@@ -23,8 +23,10 @@ Vec3f up(0, 1, 0);
 
 struct GouraundShader : public IShader {
   Vec3f varying_intensity;
+  mat<2, 3, float> varying_uv;
 
   virtual Vec4f vertex(int iface, int nthvert) {
+    varying_uv.set_col(nthvert, model->uv(iface, nthvert));
     varying_intensity[nthvert] = std::max(0.0f, model->normal(iface, nthvert) * light_dir);
     Vec4f gl_Vertex = embed<4>(model->vert(iface, nthvert));
     return Viewport * Projection * ModelView * gl_Vertex;
@@ -32,12 +34,28 @@ struct GouraundShader : public IShader {
 
   virtual bool fragment(Vec3f bar, TGAColor &color) {
     float intensity = varying_intensity * bar;
+    if (intensity > 0.85) intensity = 1.0;
+    else if (intensity > 0.60) intensity = 0.8;
+    else if (intensity > 0.45) intensity = 0.60;
+    else if (intensity > 0.30) intensity = 0.45;
+    else if (intensity > 0.15) intensity = 0.3;
+    else intensity = 0;
+
+    Vec2f uv = varying_uv * bar;
+    color = model->diffuse(uv);
     color = TGAColor(
-      255 * intensity,
-      255 * intensity,
-      255 * intensity,
+      color.r * intensity,
+      color.g * intensity,
+      color.b * intensity,
       255
     );
+
+    // color = TGAColor(
+    //   255 * intensity,
+    //   155 * intensity,
+    //   0 * intensity,
+    //   255
+    // );
     return false;
   }
 };
@@ -55,7 +73,7 @@ int main(int argc, char** argv) {
   light_dir.normalize();
 
   TGAImage image(width, height, TGAImage::RGB);
-  TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
+  TGAImage zbuffer(width, height, TGAImage::RGB);
 
   GouraundShader shader;
   for (int i = 0; i < model->nfaces(); i++) {
