@@ -31,15 +31,14 @@ void lookat(Vec3f eye, Vec3f center, Vec3f up) {
   Vec3f z = (eye - center).normalize();
   Vec3f x = cross(up, z).normalize();
   Vec3f y = cross(z, x).normalize();
-  Matrix Minv = Matrix::identity();
-  Matrix Tr = Matrix::identity();
+  ModelView = Matrix::identity();
+
   for (int i = 0; i < 3; i++) {
-    Minv[0][i] = x[i];
-    Minv[1][i] = y[i];
-    Minv[2][i] = z[i];
-    Tr[i][3] = -eye[i];
+    ModelView[0][i] = x[i];
+    ModelView[1][i] = y[i];
+    ModelView[2][i] = z[i];
+    ModelView[i][3] = -center[i];
   }
-  ModelView = Minv * Tr;
 }
 
 Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec2f P) {
@@ -89,12 +88,12 @@ void triangle(
       float z = pts[0][2] * c.x + pts[1][2] * c.y + pts[2][2] * c.z;
       float w = pts[0][3] * c.x + pts[1][3] * c.y + pts[2][3] * c.z;
       int frag_depth = std::max(0, std::min(255, int(z / w + 0.5)));
-      if (c.x < 0 || c.y < 0 || c.z < 0 || zbuffer.get(P.x, P.y).r > frag_depth) {
+      if (c.x < 0 || c.y < 0 || c.z < 0 || zbuffer.get(P.x, P.y)[0] > frag_depth) {
         continue;
       }
       bool discard = shader.fragment(c, color);
       if (!discard) {
-        zbuffer.set(P.x, P.y, TGAColor(frag_depth, frag_depth, frag_depth, 255));
+        zbuffer.set(P.x, P.y, TGAColor(frag_depth));
         image.set(P.x, P.y, color);
       }
     }

@@ -34,21 +34,16 @@ struct GouraundShader : public IShader {
 
   virtual bool fragment(Vec3f bar, TGAColor &color) {
     float intensity = varying_intensity * bar;
-    if (intensity > 0.85) intensity = 1.0;
-    else if (intensity > 0.60) intensity = 0.8;
-    else if (intensity > 0.45) intensity = 0.60;
-    else if (intensity > 0.30) intensity = 0.45;
-    else if (intensity > 0.15) intensity = 0.3;
-    else intensity = 0;
+    // if (intensity > 0.85) intensity = 1.0;
+    // else if (intensity > 0.60) intensity = 0.8;
+    // else if (intensity > 0.45) intensity = 0.60;
+    // else if (intensity > 0.30) intensity = 0.45;
+    // else if (intensity > 0.15) intensity = 0.3;
+    // else intensity = 0;
 
     Vec2f uv = varying_uv * bar;
-    color = model->diffuse(uv);
-    color = TGAColor(
-      color.r * intensity,
-      color.g * intensity,
-      color.b * intensity,
-      255
-    );
+    color = model->diffuse(uv) * intensity;
+    std::cout << uv << " B" << color[0] << " G" << color[1] <<  " R" << color[2] << " A" << color[3] << std::endl;
 
     // color = TGAColor(
     //   255 * intensity,
@@ -73,7 +68,7 @@ int main(int argc, char** argv) {
   light_dir.normalize();
 
   TGAImage image(width, height, TGAImage::RGB);
-  TGAImage zbuffer(width, height, TGAImage::RGB);
+  TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
 
   GouraundShader shader;
   for (int i = 0; i < model->nfaces(); i++) {
