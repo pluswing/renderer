@@ -104,8 +104,8 @@ TGAColor Model::diffuse(Vec2f uvf) {
 
 Vec3f Model::normal(Vec2f uvf) {
   Vec2i uv(
-    uvf.x + normalmap_.get_width(),
-    uvf.y + normalmap_.get_height()
+    uvf.x * normalmap_.get_width(),
+    uvf.y * normalmap_.get_height()
   );
   TGAColor c = normalmap_.get(uv.x, uv.y);
   Vec3f res;
@@ -113,7 +113,6 @@ Vec3f Model::normal(Vec2f uvf) {
     res[2-i] = (float) c[i] / 255.0f * 2.0f - 1.0f;
   }
   return res;
-
 }
 
 Vec2f Model::uv(int iface, int nthvert) {
