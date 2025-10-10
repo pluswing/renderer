@@ -121,8 +121,8 @@ Vec2f Model::uv(int iface, int nthvert) {
 
 float Model::specular(Vec2f uvf) {
   Vec2i uv(
-    uvf.x + specularmap_.get_width(),
-    uvf.y + specularmap_.get_height()
+    uvf.x * specularmap_.get_width(),
+    uvf.y * specularmap_.get_height()
   );
   return specularmap_.get(uv.x, uv.y)[0] / 1.0f;
 }
