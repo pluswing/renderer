@@ -54,7 +54,7 @@ struct GouraundShader : public IShader {
   }
 };
 
-struct Shader : public IShader {
+struct ShaderPhong : public IShader {
   mat<2, 3, float> varying_uv;
   mat<4, 4, float> uniform_M;
   mat<4, 4, float> uniform_MIT;
@@ -81,6 +81,33 @@ struct Shader : public IShader {
   }
 };
 
+
+struct Shader : public IShader {
+  mat<2, 3, float> varying_uv;
+  mat<3, 3, float> varying_nrm;
+  mat<4, 3, float> varying_tri;
+
+  virtual Vec4f vertex(int iface, int nthvert) {
+    varying_uv.set_col(nthvert, model->uv(iface, nthvert));
+    varying_nrm.set_col(nthvert, proj<3>(
+      (Projection * ModelView).invert_transpose()
+      * embed<4>(model->normal(iface, nthvert), 0.0f)
+    ));
+
+    Vec4f gl_Vertex = Projection * ModelView * embed<4>(model->vert(iface, nthvert));
+    varying_tri.set_col(nthvert, gl_Vertex);
+    return gl_Vertex;
+  }
+
+  virtual bool fragment(Vec3f bar, TGAColor &color) {
+    Vec3f bn = (varying_nrm * bar).normalize();
+    Vec2f uv = varying_uv * bar;
+    float diff = std::max(0.0f, bn * light_dir);
+    color = model->diffuse(uv) * diff;
+    return false;
+  }
+};
+
 int main(int argc, char** argv) {
   if (2 == argc) {
     model = new Model(argv[1]);
@@ -98,8 +125,8 @@ int main(int argc, char** argv) {
 
   // GouraundShader shader;
   Shader shader;
-  shader.uniform_M = Projection * ModelView;
-  shader.uniform_MIT = (Projection * ModelView).invert_transpose();
+  // shader.uniform_M = Projection * ModelView;
+  // shader.uniform_MIT = (Projection * ModelView).invert_transpose();
   for (int i = 0; i < model->nfaces(); i++) {
     Vec4f screen_coords[3];
     for (int j = 0; j < 3; j++) {
