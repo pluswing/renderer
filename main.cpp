@@ -128,11 +128,10 @@ int main(int argc, char** argv) {
   // shader.uniform_M = Projection * ModelView;
   // shader.uniform_MIT = (Projection * ModelView).invert_transpose();
   for (int i = 0; i < model->nfaces(); i++) {
-    Vec4f screen_coords[3];
     for (int j = 0; j < 3; j++) {
-      screen_coords[j] = shader.vertex(i, j);
+      shader.vertex(i, j);
     }
-    triangle(screen_coords, shader, image, zbuffer);
+    triangle(shader.varying_tri, shader, image, zbuffer);
   }
 
   image.flip_vertically();

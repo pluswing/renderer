@@ -208,6 +208,16 @@ public:
     T tmp = ret[0] * rows[0];
     return ret / tmp;
   }
+
+  mat<DimCols, DimRows, T> transpose() {
+    mat<DimCols, DimRows, T> ret;
+    for (int i = 0; i < DimCols; i++) {
+      for (int j = 0; j < DimRows; j++) {
+        ret[i][j] = this[j][i];
+      }
+    }
+    return ret;
+  }
 };
 
 /////////////////////////////////////////////////

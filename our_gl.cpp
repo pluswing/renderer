@@ -60,18 +60,26 @@ Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec2f P) {
 }
 
 void triangle(
-  Vec4f *pts,
+  mat<4, 3, float> &clipc,
   IShader &shader,
   TGAImage &image,
   TGAImage &zbuffer) {
 
+  mat<3, 4, float> pts = (Viewport * clipc).transpose();
+  mat<3, 2, float> pts2;
+
+  for (int i = 0; i < 3; i++) {
+    pts2[i] = proj<2>(pts[i] / pts[i][3]);
+  }
+
   Vec2f bboxmin(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
   Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
+  Vec2f clamp(image.get_width() - 1, image.get_height() - 1);
 
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 2; j++) {
-      bboxmin[j] = std::min(bboxmin[j], pts[i][j] / pts[i][3]);
-      bboxmax[j] = std::max(bboxmax[j], pts[i][j] / pts[i][3]);
+      bboxmin[j] = std::min(0.0f, std::min(bboxmin[j], pts2[i][j]));
+      bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts2[i][j]));
     }
   }
 

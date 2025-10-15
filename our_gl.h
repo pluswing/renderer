@@ -20,7 +20,7 @@ struct IShader {
 };
 
 void triangle(
-  Vec4f *pts,
+  mat<4, 3, float> &clipc,
   IShader &ishader,
   TGAImage &image,
   TGAImage &zbuffer);
