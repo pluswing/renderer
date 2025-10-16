@@ -87,19 +87,18 @@ void triangle(
   TGAColor color;
   for (P.x = bboxmin.x; P.x < bboxmax.x; P.x++) {
     for (P.y = bboxmin.y; P.y < bboxmax.y; P.y++) {
-      Vec3f c = barycentric(
-        proj<2>(pts[0] / pts[0][3]),
-        proj<2>(pts[1] / pts[1][3]),
-        proj<2>(pts[2] / pts[2][3]),
-        proj<2>(P)
+      Vec3f bc_screen = barycentric(pts2[0], pts2[1], pts2[2], P);
+      Vec3f bc_clip = Vec3f(
+        bc_screen.x / pts[0][3],
+        bc_screen.y / pts[1][3],
+        bc_screen.z / pts[2][3]
       );
-      float z = pts[0][2] * c.x + pts[1][2] * c.y + pts[2][2] * c.z;
-      float w = pts[0][3] * c.x + pts[1][3] * c.y + pts[2][3] * c.z;
-      int frag_depth = std::max(0, std::min(255, int(z / w + 0.5)));
-      if (c.x < 0 || c.y < 0 || c.z < 0 || zbuffer.get(P.x, P.y)[0] > frag_depth) {
+      bc_clip = bc_clip / (bc_clip.x + bc_clip.y + bc_clip.z);
+      float frag_depth = clipc[2] * bc_clip;
+      if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0 || zbuffer.get(P.x, P.y)[0] > frag_depth) {
         continue;
       }
-      bool discard = shader.fragment(c, color);
+      bool discard = shader.fragment(bc_clip, color);
       if (!discard) {
         zbuffer.set(P.x, P.y, TGAColor(frag_depth));
         image.set(P.x, P.y, color);

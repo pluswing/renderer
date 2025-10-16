@@ -131,6 +131,7 @@ int main(int argc, char** argv) {
     for (int j = 0; j < 3; j++) {
       shader.vertex(i, j);
     }
+    std::cout << i << std::endl;
     triangle(shader.varying_tri, shader, image, zbuffer);
   }
 
