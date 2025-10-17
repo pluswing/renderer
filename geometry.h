@@ -209,6 +209,10 @@ public:
     return ret / tmp;
   }
 
+  mat<DimRows, DimCols, T> invert() {
+    return invert_transpose().transpose();
+  }
+
   mat<DimCols, DimRows, T> transpose() {
     mat<DimCols, DimRows, T> ret;
     for (int i = 0; i < DimCols; i++) {
