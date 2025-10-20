@@ -134,12 +134,50 @@ struct Shader : public IShader {
   }
 };
 
+struct DepthShader : public IShader {
+  mat<3, 3, float> varying_tri;
+
+  DepthShader(): varying_tri() {}
+
+  virtual Vec4f vertex(int iface, int nthvert) {
+    Vec4f gl_Vertex = embed<4>(model->vert(iface, nthvert));
+    gl_Vertex = Viewport * Projection * ModelView * gl_Vertex;
+    varying_tri.set_col(nthvert, proj<3>(gl_Vertex / gl_Vertex[3]));
+    return gl_Vertex;
+  }
+
+  virtual bool fragment(Vec3f bar, TGAColor &color) {
+    Vec3f p = varying_tri * bar;
+    float depth = 255.0f;
+    color = TGAColor(255, 255, 255) * ((p.z) / depth);
+    return false;
+  }
+};
+
 int main(int argc, char** argv) {
   if (2 == argc) {
     model = new Model(argv[1]);
   } else {
     model = new Model("obj/african_head.obj");
   }
+
+  TGAImage depth(width, height, TGAImage::RGB);
+  TGAImage shadowbuffer(width, height, TGAImage::GRAYSCALE);
+  lookat(light_dir, center, up);
+  viewport(width/8, height/8, width*3/4, height*3/4);
+  projection(0);
+  DepthShader depthshader;
+  Vec4f screen_coords[3];
+  for (int i = 0; i < model->nfaces(); i++) {
+    for (int j = 0; j < 3; j++) {
+      screen_coords[j] = depthshader.vertex(i, j);
+    }
+    triangle(screen_coords, depthshader, depth, shadowbuffer);
+  }
+  depth.flip_vertically();
+  depth.write_tga_file("depth.tga");
+
+  // -----------
 
   lookat(eye, center, up);
   viewport(width/8, width/8, width*3/4, height*3/4);
@@ -157,7 +195,6 @@ int main(int argc, char** argv) {
     for (int j = 0; j < 3; j++) {
       shader.vertex(i, j);
     }
-    std::cout << i << std::endl;
     triangle(shader.varying_tri, shader, image, zbuffer);
   }
 

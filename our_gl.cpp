@@ -78,7 +78,7 @@ void triangle(
 
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 2; j++) {
-      bboxmin[j] = std::min(0.0f, std::min(bboxmin[j], pts2[i][j]));
+      bboxmin[j] = std::max(0.0f, std::min(bboxmin[j], pts2[i][j]));
       bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts2[i][j]));
     }
   }
