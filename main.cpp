@@ -81,7 +81,7 @@ struct ShaderPhong : public IShader {
   }
 };
 
-
+/*
 struct Shader : public IShader {
   mat<2, 3, float> varying_uv;
   mat<4, 3, float> varying_tri;
@@ -133,6 +133,7 @@ struct Shader : public IShader {
     return false;
   }
 };
+*/
 
 struct DepthShader : public IShader {
   mat<3, 3, float> varying_tri;
@@ -150,6 +151,43 @@ struct DepthShader : public IShader {
     Vec3f p = varying_tri * bar;
     float depth = 255.0f;
     color = TGAColor(255, 255, 255) * ((p.z) / depth);
+    return false;
+  }
+};
+
+
+struct Shader : public IShader {
+  mat<4, 4, float> uniform_M;
+  mat<4, 4, float> uniform_MIT;
+  mat<4, 4, float> uniform_Mshadow;
+  mat<2, 3, float> varying_uv;
+  mat<3, 3, float> varying_tri;
+
+  Shader(Matrix M, Matrix MIT, Matrix MS): uniform_M(M), uniform_MIT(MIT), uniform_Mshadow(MS), varying_uv(), varying_tri() {}
+
+  virtual Vec4f vertex(int iface, int nthvert) {
+    varying_uv.set_col(nthvert, model->uv(iface, nthvert));
+    Vec4f gl_Vertex = Viewport * Projection * ModelView * embed<4>(model->vert(iface, nthvert));
+    varying_tri.set_col(nthvert, proj<3>(gl_Vertex / gl_Vertex[3]));
+    return gl_Vertex;
+  }
+
+  virtual bool fragment(Vec3f bar, TGAColor &color) {
+    Vec4f sb_p = uniform_Mshadow * embed<4>(varying_tri * bar);
+    sb_p = sb_p / sb_p[3];
+    int idx = int(sb_p[0]) + int(sb_p[1]) * width;
+    float shadow = 0.3 + 0.7 * (shadowbuffer[idx] < sb_p[2]);
+    Vec2f uv = varying_uv * bar;
+    Vec3f n = proj<3>(uniform_MIT * embed<4>(model->normal(uv))).normalize();
+    Vec3f l = proj<3>(uniform_M * embed<4>(light_dir)).normalize();
+    Vec3f r = (n * (n * l * 2.0f) - l).normalize();
+    float spec = pow(std::max(r.z, 0.0f), model->specular(uv));
+    float diff = std::max(0.0f, n * l);
+    TGAColor c = model->diffuse(uv);
+    color = c;
+    for (int i = 0; i < 3; i++) {
+      color[i] = std::min<float>(20 + c[i] * shadow * (1.2 * diff + 0.6 * spec), 255);
+    }
     return false;
   }
 };
@@ -178,7 +216,7 @@ int main(int argc, char** argv) {
   depth.write_tga_file("depth.tga");
 
   // -----------
-
+/*
   lookat(eye, center, up);
   viewport(width/8, width/8, width*3/4, height*3/4);
   projection(-1.0f / (eye - center).norm());
@@ -203,7 +241,7 @@ int main(int argc, char** argv) {
 
   image.write_tga_file("output.tga");
   zbuffer.write_tga_file("zbuffer.tga");
-
+*/
   delete model;
   return 0;
 }
