@@ -13,6 +13,8 @@ const TGAColor blue   = TGAColor(0,   0,   255, 255);
 const TGAColor yellow = TGAColor(255, 255, 0,   255);
 
 Model *model = NULL;
+float *shadowbuffer = NULL;
+
 const int width = 800;
 const int height = 800;
 
@@ -176,7 +178,7 @@ struct Shader : public IShader {
     Vec4f sb_p = uniform_Mshadow * embed<4>(varying_tri * bar);
     sb_p = sb_p / sb_p[3];
     int idx = int(sb_p[0]) + int(sb_p[1]) * width;
-    float shadow = 0.3 + 0.7 * (shadowbuffer[idx] < sb_p[2]);
+    float shadow = 0.3 + 0.7 * (shadowbuffer[idx] < sb_p[2] + 43.34);
     Vec2f uv = varying_uv * bar;
     Vec3f n = proj<3>(uniform_MIT * embed<4>(model->normal(uv))).normalize();
     Vec3f l = proj<3>(uniform_M * embed<4>(light_dir)).normalize();
@@ -199,49 +201,54 @@ int main(int argc, char** argv) {
     model = new Model("obj/african_head.obj");
   }
 
-  TGAImage depth(width, height, TGAImage::RGB);
-  TGAImage shadowbuffer(width, height, TGAImage::GRAYSCALE);
-  lookat(light_dir, center, up);
-  viewport(width/8, height/8, width*3/4, height*3/4);
-  projection(0);
-  DepthShader depthshader;
-  Vec4f screen_coords[3];
-  for (int i = 0; i < model->nfaces(); i++) {
-    for (int j = 0; j < 3; j++) {
-      screen_coords[j] = depthshader.vertex(i, j);
-    }
-    triangle(screen_coords, depthshader, depth, shadowbuffer);
-  }
-  depth.flip_vertically();
-  depth.write_tga_file("depth.tga");
-
-  // -----------
-/*
-  lookat(eye, center, up);
-  viewport(width/8, width/8, width*3/4, height*3/4);
-  projection(-1.0f / (eye - center).norm());
+  float *zbuffer = new float[width*height];
+  shadowbuffer = new float[width*height];
   light_dir.normalize();
 
-  TGAImage image(width, height, TGAImage::RGB);
-  TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
-
-  // GouraundShader shader;
-  Shader shader;
-  // shader.uniform_M = Projection * ModelView;
-  // shader.uniform_MIT = (Projection * ModelView).invert_transpose();
-  for (int i = 0; i < model->nfaces(); i++) {
-    for (int j = 0; j < 3; j++) {
-      shader.vertex(i, j);
+  {
+    TGAImage depth(width, height, TGAImage::RGB);
+    lookat(light_dir, center, up);
+    viewport(width/8, height/8, width*3/4, height*3/4);
+    projection(0);
+    DepthShader depthshader;
+    Vec4f screen_coords[3];
+    for (int i = 0; i < model->nfaces(); i++) {
+      for (int j = 0; j < 3; j++) {
+        screen_coords[j] = depthshader.vertex(i, j);
+      }
+      triangle(screen_coords, depthshader, depth, shadowbuffer);
     }
-    triangle(shader.varying_tri, shader, image, zbuffer);
+    depth.flip_vertically();
+    depth.write_tga_file("depth.tga");
   }
 
-  image.flip_vertically();
-  zbuffer.flip_vertically();
+  Matrix M = Viewport * Projection * ModelView;
 
-  image.write_tga_file("output.tga");
-  zbuffer.write_tga_file("zbuffer.tga");
-*/
+  {
+    TGAImage frame(width, height, TGAImage::RGB);
+    lookat(eye, center, up);
+    viewport(width/8, width/8, width*3/4, height*3/4);
+    projection(-1.0f / (eye - center).norm());
+
+    Shader shader(
+      ModelView,
+      (Projection * ModelView).invert_transpose(),
+      M * (Viewport * Projection*ModelView).invert()
+    );
+    Vec4f screen_coords[3];
+    for (int i = 0; i < model->nfaces(); i++) {
+      for (int j = 0; j < 3; j++) {
+        screen_coords[j] = shader.vertex(i, j);
+      }
+      triangle(screen_coords, shader, frame, zbuffer);
+    }
+
+    frame.flip_vertically();
+    frame.write_tga_file("output.tga");
+  }
+
+  delete[] shadowbuffer;
+  delete[] zbuffer;
   delete model;
   return 0;
 }

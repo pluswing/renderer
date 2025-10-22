@@ -23,6 +23,6 @@ void triangle(
   Vec4f *pts,
   IShader &ishader,
   TGAImage &image,
-  TGAImage &zbuffer);
+  float *zbuffer);
 
 #endif
