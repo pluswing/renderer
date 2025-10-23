@@ -194,6 +194,21 @@ struct Shader : public IShader {
   }
 };
 
+struct ZShader : public IShader {
+  mat<4, 3, float> varying_tri;
+
+  virtual Vec4f vertex(int iface, int nthvert) {
+    Vec4f gl_Vertex = Projection * ModelView * embed<4>(model->vert(iface, nthvert));
+    varying_tri.set_col(nthvert, gl_Vertex);
+    return gl_Vertex;
+  }
+
+  virtual bool fragment(Vec3f bar, TGAColor &color) {
+    color = TGAColor(0, 0, 0);
+    return false;
+  }
+};
+
 int main(int argc, char** argv) {
   if (2 == argc) {
     model = new Model(argv[1]);
@@ -205,6 +220,21 @@ int main(int argc, char** argv) {
   shadowbuffer = new float[width*height];
   light_dir.normalize();
 
+  ZShader zshader;
+  TGAImage frame(width, height, TGAImage::RGB);
+  for (int i = 0; i < model->nfaces(); i++) {
+    for (int j = 0; j < 3; j++) {
+      zshader.vertex(i, j);
+    }
+    triangle(zshader.varying_tri, zshader, frame, zbuffer);
+  }
+
+  for (int x = 0; x < width; x++) {
+    for (int y = 0; y < height; y++) {
+      // TODO
+    }
+  }
+  /*
   {
     TGAImage depth(width, height, TGAImage::RGB);
     lookat(light_dir, center, up);
@@ -246,6 +276,7 @@ int main(int argc, char** argv) {
     frame.flip_vertically();
     frame.write_tga_file("output.tga");
   }
+  */
 
   delete[] shadowbuffer;
   delete[] zbuffer;
