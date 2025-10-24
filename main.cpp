@@ -203,11 +203,28 @@ struct ZShader : public IShader {
     return gl_Vertex;
   }
 
-  virtual bool fragment(Vec3f bar, TGAColor &color) {
-    color = TGAColor(0, 0, 0);
+  virtual bool fragment(Vec3f gl_FragCoord, Vec3f bar, TGAColor &color) {
+    color = TGAColor(255, 255, 255);
     return false;
   }
 };
+
+float max_elevation_angle(float *zbuffer, Vec2f p, Vec2f dir) {
+  float maxangle = 0;
+  for (float t = 0.0f; t < 1000.0f; t += 1.0f) {
+    Vec2f cur = p + dir * t;
+    if (cur.x >= width || cur.y >= height || cur.x < 0 || cur.y < 0) {
+      return maxangle;
+    }
+    float distance = (p-cur).norm();
+    if (distance < 1.0f) {
+      continue;
+    }
+    float elevation = zbuffer[int(cur.x) + int(cur.y) * width] - zbuffer[int(p.x) + int(p.y) * width];
+    maxangle = std::max(maxangle, atanf(elevation / distance));
+  }
+  return maxangle;
+}
 
 int main(int argc, char** argv) {
   if (2 == argc) {
@@ -228,12 +245,26 @@ int main(int argc, char** argv) {
     }
     triangle(zshader.varying_tri, zshader, frame, zbuffer);
   }
+  frame.flip_vertically();
+  frame.write_tga_file("output1.tga");
 
+  TGAImage frame2(width, height, TGAImage::RGB);
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
-      // TODO
+      if (zbuffer[x + y * width] < -1e5) {
+        continue;
+      }
+      float total = 0;
+      for (float a = 0; a < M_PI * 2 - 1e4; a += M_PI / 4) {
+        total += M_PI / 2 - max_elevation_angle(zbuffer, Vec2f(x, y), Vec2f(cos(a), sin(a)));
+      }
+      total /= (M_PI / 2) * 8;
+      total = pow(total, 100.f);
+      frame2.set(x, y, TGAColor(total * 255, total * 255, total * 255));
     }
   }
+  frame2.flip_vertically();
+  frame2.write_tga_file("output.tga");
   /*
   {
     TGAImage depth(width, height, TGAImage::RGB);
