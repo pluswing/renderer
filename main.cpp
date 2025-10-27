@@ -204,7 +204,7 @@ struct ZShader : public IShader {
   }
 
   virtual bool fragment(Vec3f gl_FragCoord, Vec3f bar, TGAColor &color) {
-    color = TGAColor(255, 255, 255);
+    color = TGAColor(0, 0, 0);
     return false;
   }
 };
@@ -237,6 +237,10 @@ int main(int argc, char** argv) {
   shadowbuffer = new float[width*height];
   light_dir.normalize();
 
+  lookat(eye, center, up);
+  viewport(width/8, width/8, width*3/4, height*3/4);
+  projection(-1.0f / (eye - center).norm());
+
   ZShader zshader;
   TGAImage frame(width, height, TGAImage::RGB);
   for (int i = 0; i < model->nfaces(); i++) {
@@ -255,7 +259,7 @@ int main(int argc, char** argv) {
         continue;
       }
       float total = 0;
-      for (float a = 0; a < M_PI * 2 - 1e4; a += M_PI / 4) {
+      for (float a = 0; a < M_PI * 2 - 1e-4; a += M_PI / 4) {
         total += M_PI / 2 - max_elevation_angle(zbuffer, Vec2f(x, y), Vec2f(cos(a), sin(a)));
       }
       total /= (M_PI / 2) * 8;
