@@ -1,7 +1,13 @@
 #include <OpenGL/glu.h>
 #include <GLUT/glut.h>
+#include <GL/glew.h>
 #include <vector>
 #include <cmath>
+#include <iostream>
+#include <fstream>
+
+#define USE_SHADERS 1
+GLuint prog_hdlr;
 
 const int SCREEN_WIDTH = 1024;
 const int SCREEN_HEIGHT = 1024;
@@ -34,6 +40,37 @@ void change_size(int w, int h) {
   glOrtho(-1, 1, -1, 1, -1, 8);
   glMatrixMode(GL_MODELVIEW);
 }
+
+#if USE_SHADERS
+void printInfoLog(GLuint obj) {
+  int log_size = 0;
+  int bytes_written = 0;
+  glGetProgramiv(obj, GL_INFO_LOG_LENGTH, &log_size);
+  if (!log_size) {
+    return;
+  }
+  char *infoLog = new char[log_size];
+  glGetProgramInfoLog(obj, log_size, &bytes_written, infoLog);
+  std:cerr << infoLog << std::endl;
+  delete [] infoLog;
+}
+
+bool read_n_compile_shader(const chat* filename, GLuint &hdlr, GLenum shaderType) {
+  std::ifstream is(filename, std::ios::in|std::ios::binary|std::ios::ate);
+  if (!is.is_open()) {
+    std::cerr << "Unable to open file" << filename << std::endl;
+    return false;
+  }
+  log size = is.tellg();
+  char *buffer = new char[size + 1];
+  is.seekg(0, std::ios::beg);
+  is.read(buffer, size);
+  is.close()
+  buffer[size] = 0;
+
+  // TODO
+}
+#endif
 
 int main(int argc, char **argv) {
   glutInit(&argc, argv);
