@@ -1,6 +1,6 @@
+#include <GL/glew.h>
 #include <OpenGL/glu.h>
 #include <GLUT/glut.h>
-#include <GL/glew.h>
 #include <vector>
 #include <cmath>
 #include <iostream>
@@ -51,24 +51,44 @@ void printInfoLog(GLuint obj) {
   }
   char *infoLog = new char[log_size];
   glGetProgramInfoLog(obj, log_size, &bytes_written, infoLog);
-  std:cerr << infoLog << std::endl;
+  std::cerr << infoLog << std::endl;
   delete [] infoLog;
 }
 
-bool read_n_compile_shader(const chat* filename, GLuint &hdlr, GLenum shaderType) {
+bool read_n_compile_shader(const char* filename, GLuint &hdlr, GLenum shaderType) {
   std::ifstream is(filename, std::ios::in|std::ios::binary|std::ios::ate);
   if (!is.is_open()) {
     std::cerr << "Unable to open file" << filename << std::endl;
     return false;
   }
-  log size = is.tellg();
+  long size = is.tellg();
   char *buffer = new char[size + 1];
   is.seekg(0, std::ios::beg);
   is.read(buffer, size);
-  is.close()
+  is.close();
   buffer[size] = 0;
 
-  // TODO
+  hdlr = glCreateShader(shaderType);
+  glShaderSource(hdlr, 1, (const GLchar**)&buffer, NULL);
+  glCompileShader(hdlr);
+  std::cerr << "info log for" << filename << std::endl;
+  printInfoLog(hdlr);
+  delete [] buffer;
+  return true;
+}
+
+void setShaders(GLuint &prog_hdlr, const char *vsfile, const char *fsfile) {
+  GLuint vert_hdlr, frag_hdlr;
+  read_n_compile_shader(vsfile, vert_hdlr, GL_VERTEX_SHADER);
+  read_n_compile_shader(fsfile, frag_hdlr, GL_FRAGMENT_SHADER);
+
+  prog_hdlr = glCreateProgram();
+  glAttachShader(prog_hdlr, frag_hdlr);
+  glAttachShader(prog_hdlr, vert_hdlr);
+
+  glLinkProgram(prog_hdlr);
+  std::cerr << "info log fort the linked program" << std::endl;
+  printInfoLog(prog_hdlr);
 }
 #endif
 
@@ -89,6 +109,18 @@ int main(int argc, char **argv) {
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
+
+#if USE_SHADERS
+  glewInit();
+  if (GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader && GL_EXT_geometry_shader4) {
+    std::cout << "Ready for GLSL - vertex, gragment, and geometry units" << std::endl;
+  } else {
+    std::cout << "NO GLSL support" << std::endl;
+    exit(1);
+  }
+  setShaders(prog_hdlr, "shaders/vart_shader.glsl", "shaders/frag_shader.glsl");
+  glUseProgram(prog_hdlr);
+#endif
 
   glutMainLoop();
   return 0;

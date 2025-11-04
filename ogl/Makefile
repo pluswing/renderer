@@ -1,7 +1,7 @@
 SYSCONF_LINK = g++
-CPPFLAGS     =
-LDFLAGS      =
-LIBS         = -lm -framework OpenGL -framework GLUT
+CPPFLAGS     = -I/opt/homebrew/include
+LDFLAGS      = -L/opt/homebrew/lib
+LIBS         = -lm -lGLEW -framework OpenGL -framework GLUT
 
 DESTDIR = ./
 TARGET  = main_gl
