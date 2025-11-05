@@ -1,6 +1,7 @@
 #version 120
 
 varying vec3 n;
+// uniform mat4 gl_ModelViewProjectionMatrix;
 
 void main() {
   gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
