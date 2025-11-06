@@ -6,8 +6,10 @@
 #include <iostream>
 #include <fstream>
 
-#define USE_SHADERS 1
+#define ROTATE 1
+#define RENDER_SPHERES_INSTED_OF_VERTICES 0
 GLuint prog_hdlr;
+GLint location_attribute_0, location_viewport;
 
 const int NATOMS = 10000;
 const int SCREEN_WIDTH = 1024;
@@ -16,6 +18,7 @@ const float camera[] = {0.6, 0, 1};
 const float light0_position[4] = { 1, 1, 1, 0 };
 
 std::vector<std::vector<float> > atoms;
+float angle = 0.72;
 
 float rand_zero_one() {
   return (float) rand() / (float) RAND_MAX;
@@ -25,15 +28,26 @@ float rand_minus_one_one() {
   return rand_zero_one() * (rand() > RAND_MAX / 2 ? 1 : -1);
 }
 
+float cur_camera[] = {0, 0, 0};
+
 void render_scene(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
+  cur_camera[0] = cos(angle) * camera[0] + sin(angle) * camera[2];
+  cur_camera[1] = camera[1];
+  cur_camera[2] = cos(angle) * camera[2] - sin(angle) * camera[0];
+
+#if ROTATE
+  angle += 0.01;
+#endif
+
   gluLookAt(
-    camera[0], camera[1], camera[2],
+    cur_camera[0], cur_camera[1], cur_camera[2],
     0, 0, 0,
     0, 1, 0
   );
 
+#if RENDER_SPHERES_INSTED_OF_VERTICES
   for (int i = 0; i < NATOMS; i++) {
     glColor3f(atoms[i][4], atoms[i][5], atoms[i][6]);
     glPushMatrix();
@@ -41,6 +55,21 @@ void render_scene(void) {
     glutSolidSphere(atoms[i][3], 16, 16);
     glPopMatrix();
   }
+#else
+  glUseProgram(prog_hdlr);
+  GLfloat viewport[4];
+  glGetFloatv(GL_VIEWPORT, viewport);
+  glUniform4fv(location_viewport, 1, viewport);
+  glBegin(GL_POINTS);
+  for (int i = 0; i < NATOMS; i++) {
+    glColor3f(atoms[i][4], atoms[i][5], atoms[i][6]);
+    glVertexAttrib1f(location_attribute_0, atoms[i][3]);
+    glVertex3f(atoms[i][0], atoms[i][1], atoms[i][2]);
+  }
+  glEnd();
+  glUseProgram(0);
+#endif
+
   glutSwapBuffers();
 }
 
@@ -58,7 +87,7 @@ void change_size(int w, int h) {
   glMatrixMode(GL_MODELVIEW);
 }
 
-#if USE_SHADERS
+#if !RENDER_SPHERES_INSTED_OF_VERTICES
 void printInfoLog(GLuint obj) {
   int log_size = 0;
   int bytes_written = 0;
@@ -133,6 +162,9 @@ int main(int argc, char **argv) {
   glutDisplayFunc(render_scene);
   glutReshapeFunc(change_size);
   glutKeyboardFunc(process_keys);
+#if ROTATE
+  glutIdleFunc(render_scene);
+#endif
 
   glEnable(GL_COLOR_MATERIAL);
   glEnable(GL_DEPTH_TEST);
@@ -140,7 +172,7 @@ int main(int argc, char **argv) {
   glEnable(GL_LIGHT0);
   glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
 
-#if USE_SHADERS
+#if !RENDER_SPHERES_INSTED_OF_VERTICES
   glewInit();
   if (GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader && GL_EXT_geometry_shader4) {
     std::cout << "Ready for GLSL - vertex, gragment, and geometry units" << std::endl;
@@ -149,7 +181,9 @@ int main(int argc, char **argv) {
     exit(1);
   }
   setShaders(prog_hdlr, "shaders/vart_shader.glsl", "shaders/frag_shader.glsl");
-  glUseProgram(prog_hdlr);
+  location_attribute_0 = glGetAttribLocation(prog_hdlr, "radius_attr");
+  location_viewport = glGetUniformLocation(prog_hdlr, "viewport");
+  glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 #endif
 
   glutMainLoop();
