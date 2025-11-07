@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fstream>
 
-#define ROTATE 1
+#define ROTATE 0
 #define RENDER_SPHERES_INSTED_OF_VERTICES 0
 GLuint prog_hdlr;
 GLint location_attribute_0, location_viewport;
