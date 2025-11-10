@@ -11,5 +11,5 @@ void main() {
   gl_FrontColor = gl_Color;
   gl_PointSize = radius_attr * min(viewport.z, viewport.w);
   center = gl_Position.xy;
-  radius = radius_attr;
+  radius = radius_attr / 2;
 }

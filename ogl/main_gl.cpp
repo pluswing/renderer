@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
     std::cout << "NO GLSL support" << std::endl;
     exit(1);
   }
-  setShaders(prog_hdlr, "shaders/vart_shader.glsl", "shaders/frag_shader.glsl");
+  setShaders(prog_hdlr, "shaders/vert_shader.glsl", "shaders/frag_shader.glsl");
   location_attribute_0 = glGetAttribLocation(prog_hdlr, "radius_attr");
   location_viewport = glGetUniformLocation(prog_hdlr, "viewport");
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
