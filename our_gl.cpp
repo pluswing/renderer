@@ -86,6 +86,8 @@ void triangle(
   TGAColor color;
   for (P.x = bboxmin.x; P.x < bboxmax.x; P.x++) {
     for (P.y = bboxmin.y; P.y < bboxmax.y; P.y++) {
+      // show voxel
+      // Vec3f bc_screen = embed<3>(P, int(pts[0][2]));
       Vec3f bc_screen = barycentric(pts2[0], pts2[1], pts2[2], P);
       Vec3f bc_clip = Vec3f(
         bc_screen.x / pts[0][3],
