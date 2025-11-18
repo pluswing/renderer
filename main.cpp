@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
 
   TGAImage frame(width, height, TGAImage::RGB);
   lookat(eye, center, up);
-  viewport(width/8, width/8, width*3/4, height*3/4);
+  viewport(width/8, height/8, width*3/4, height*3/4);
   projection(-1.0f / (eye - center).norm());
   light_dir = proj<3>((Projection * ModelView * embed<4>(light_dir, 0.0f))).normalize();
 
